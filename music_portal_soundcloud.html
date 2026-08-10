@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Music Portal</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;font-family:Arial,sans-serif}
+    body{min-height:100vh;background:linear-gradient(135deg,#111827,#1f2937);color:#fff;display:flex;justify-content:center;align-items:center;padding:20px}
+    .dashboard{width:100%;max-width:700px;background:rgba(255,255,255,.08);backdrop-filter:blur(15px);border:1px solid rgba(255,255,255,.12);border-radius:24px;padding:30px;box-shadow:0 20px 50px rgba(0,0,0,.35)}
+    .header{text-align:center;margin-bottom:30px}.logo{font-size:48px;margin-bottom:10px}h1{font-size:28px;margin-bottom:8px}.subtitle{color:#9ca3af;font-size:14px}
+    .apps{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:15px}
+    .app{border:none;border-radius:18px;padding:25px 15px;color:#fff;cursor:pointer;font-size:16px;font-weight:bold;transition:.25s}
+    .app:hover{transform:translateY(-5px);filter:brightness(1.1)}
+    .soundcloud{background:linear-gradient(135deg,#ff5500,#ff7700)}.browser{background:linear-gradient(135deg,#2563eb,#4f46e5)}
+    .about{margin-top:25px;text-align:center;color:#9ca3af;font-size:12px}
+    .status{margin-top:20px;text-align:center;padding:10px;background:rgba(0,0,0,.2);border-radius:10px;font-size:13px;color:#d1d5db}
+  </style>
+</head>
+<body>
+  <div class="dashboard">
+    <div class="header">
+      <div class="logo">🎵</div>
+      <h1>Music Portal</h1>
+      <p class="subtitle">Pilih platform musik yang ingin kamu buka</p>
+    </div>
+
+    <div class="apps">
+      <button class="app soundcloud" onclick="openSoundCloud()">☁️<br>SoundCloud</button>
+      <button class="app browser" onclick="openSoundCloudMobile()">📱<br>SoundCloud Mobile</button>
+    </div>
+
+    <div class="status" id="status">Siap digunakan</div>
+    <div class="about">Music Portal • HTML</div>
+  </div>
+
+  <script>
+    function openSoundCloud(){
+      window.open("https://soundcloud.com/","_blank","noopener,noreferrer");
+      document.getElementById("status").innerText="SoundCloud dibuka di tab baru";
+    }
+    function openSoundCloudMobile(){
+      window.open("https://m.soundcloud.com/","_blank","noopener,noreferrer");
+      document.getElementById("status").innerText="SoundCloud Mobile dibuka di tab baru";
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,2212 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Danz</title>
+<style>
+  :root{
+    --bg:#0b0e14;
+    --panel:#11151d;
+    --panel2:#161b25;
+    --line:#232a38;
+    --line-soft:#1a2029;
+    --text:#e7ecf3;
+    --sub:#7c8798;
+    --sub2:#57606f;
+    --green:#12b886;
+    --green-dim:#0d8f6b;
+    --red:#f0475a;
+    --red-dim:#c23a49;
+    --amber:#e8b04b;
+    --accent:#4f8cff;
+    --mono:'JetBrains Mono','SF Mono',Consolas,monospace;
+    --sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{
+    background:var(--bg); color:var(--text);
+    font-family:var(--sans);
+    height:100%;
+    overflow-x:hidden;
+    -webkit-tap-highlight-color:transparent;
+  }
+  body{font-size:13px; line-height:1.4;}
+  ::selection{background:var(--accent); color:#fff;}
+  button{font-family:inherit; cursor:pointer; border:none; outline:none; background:none; color:inherit;}
+  input{font-family:inherit; outline:none; border:none; background:none; color:inherit;}
+  ::-webkit-scrollbar{width:6px; height:6px;}
+  ::-webkit-scrollbar-thumb{background:#2a3140; border-radius:3px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+
+  .num{font-family:var(--mono); font-variant-numeric:tabular-nums;}
+  .up{color:var(--green);}
+  .down{color:var(--red);}
+
+  /* ===== APP SHELL ===== */
+  #app{display:flex; flex-direction:column; min-height:100vh;}
+
+  /* ===== TOP BAR ===== */
+  .topbar{
+    display:flex; align-items:center; gap:14px;
+    padding:10px 14px;
+    background:var(--panel);
+    border-bottom:1px solid var(--line);
+    flex-wrap:wrap;
+  }
+  .brand{
+    font-weight:800; font-size:15px; letter-spacing:.3px;
+    display:flex; align-items:center; gap:7px;
+    color:var(--text);
+  }
+  .brand .dot{width:8px; height:8px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green);}
+  .pair-select{
+    display:flex; align-items:center; gap:8px;
+    background:var(--panel2);
+    border:1px solid var(--line);
+    padding:6px 10px; border-radius:8px;
+    cursor:pointer;
+    position:relative;
+  }
+  .pair-select .sym{font-weight:700; font-size:14px;}
+  .pair-select .chev{color:var(--sub); font-size:10px;}
+  .pair-price{font-family:var(--mono); font-weight:700; font-size:16px;}
+  .pair-change{font-family:var(--mono); font-size:12px; padding:2px 6px; border-radius:5px;}
+  .pair-change.up{background:rgba(18,184,134,.12);}
+  .pair-change.down{background:rgba(240,71,90,.12);}
+  .data-source-badge{
+    font-family:var(--mono); font-size:9.5px; font-weight:800; letter-spacing:.5px;
+    padding:3px 7px; border-radius:5px; border:1px solid var(--line);
+    display:flex; align-items:center; gap:4px;
+  }
+  .data-source-badge::before{content:''; width:5px; height:5px; border-radius:50%;}
+  .data-source-badge.live{color:var(--green); border-color:rgba(18,184,134,.35); background:rgba(18,184,134,.08);}
+  .data-source-badge.live::before{background:var(--green); box-shadow:0 0 5px var(--green);}
+  .data-source-badge.sim{color:var(--amber); border-color:rgba(232,176,75,.35); background:rgba(232,176,75,.08);}
+  .data-source-badge.sim::before{background:var(--amber);}
+  .topbar-right{margin-left:auto; display:flex; align-items:center; gap:16px;}
+  .balance-box{text-align:right;}
+  .balance-box .lbl{color:var(--sub); font-size:10.5px; text-transform:uppercase; letter-spacing:.5px;}
+  .balance-box .val{font-family:var(--mono); font-weight:700; font-size:14px;}
+  .reset-btn{
+    display:flex; align-items:center; gap:5px;
+    color:var(--sub); font-size:11.5px;
+    padding:6px 10px; border:1px solid var(--line); border-radius:7px;
+    transition:.15s;
+  }
+  .reset-btn:hover{color:var(--text); border-color:var(--sub2);}
+
+  /* pair dropdown */
+  .pair-dropdown{
+    position:absolute; top:calc(100% + 6px); left:0;
+    width:280px; max-height:340px; overflow-y:auto;
+    background:var(--panel2); border:1px solid var(--line); border-radius:10px;
+    box-shadow:0 12px 32px rgba(0,0,0,.5);
+    z-index:200; display:none;
+  }
+  .pair-dropdown.open{display:block;}
+  .pair-dd-item{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:9px 12px; border-bottom:1px solid var(--line-soft);
+    transition:.1s;
+  }
+  .pair-dd-item:hover{background:#1c2330;}
+  .pair-dd-item .l{display:flex; flex-direction:column;}
+  .pair-dd-item .l .n{font-weight:700; font-size:12.5px;}
+  .pair-dd-item .l .lev{color:var(--sub); font-size:10px;}
+  .pair-dd-item .r{text-align:right;}
+  .pair-dd-item .r .p{font-family:var(--mono); font-size:12px;}
+  .pair-dd-item .r .c{font-family:var(--mono); font-size:10.5px;}
+
+  /* ===== MAIN GRID ===== */
+  .main{display:flex; flex-direction:column; flex:1; min-height:0;}
+  .top-row{display:flex; flex:1; min-height:0;}
+  .center-col{flex:1; display:flex; flex-direction:column; min-width:0;}
+  .right-col{
+    width:320px; flex-shrink:0;
+    background:var(--panel);
+    border-left:1px solid var(--line);
+    display:flex; flex-direction:column;
+  }
+
+  /* ===== CHART TOOLBAR ===== */
+  .chart-toolbar{
+    display:flex; align-items:center; gap:6px;
+    padding:8px 12px;
+    border-bottom:1px solid var(--line);
+    background:var(--panel);
+    flex-wrap:wrap;
+  }
+  .tf-btn{
+    padding:5px 10px; border-radius:6px; font-size:11.5px; font-weight:600;
+    color:var(--sub); transition:.15s;
+  }
+  .tf-btn:hover{color:var(--text); background:var(--panel2);}
+  .tf-btn.active{color:var(--bg); background:var(--accent);}
+  .toolbar-sep{width:1px; height:18px; background:var(--line); margin:0 4px;}
+  .zoom-controls{display:flex; align-items:center; gap:3px;}
+  .zoom-controls.push-right{margin-left:auto;}
+  .zoom-btn{
+    width:26px; height:26px; display:flex; align-items:center; justify-content:center;
+    border-radius:6px; background:var(--panel2); border:1px solid var(--line);
+    color:var(--sub); font-size:14px; font-weight:700; transition:.15s;
+  }
+  .zoom-btn:hover{color:var(--text); border-color:var(--sub2);}
+  .zoom-label{color:var(--sub2); font-size:10.5px; width:36px; text-align:center; font-family:var(--mono);}
+
+  /* ===== CHART ===== */
+  .chart-wrap{
+    flex:1; position:relative; min-height:340px;
+    background:var(--bg);
+  }
+  #chartCanvas{display:block; width:100%; height:100%; touch-action:none;}
+  .chart-hint{
+    position:absolute; top:10px; left:12px; right:70px; font-size:10.5px; color:var(--sub2);
+    pointer-events:none; font-family:var(--mono);
+  }
+  @media (max-width: 700px){
+    .chart-hint{display:none;}
+  }
+  .chart-loading{
+    position:absolute; inset:0; background:var(--bg);
+    display:none; flex-direction:column; align-items:center; justify-content:center; gap:12px;
+    z-index:50;
+  }
+  .chart-loading.show{display:flex;}
+  .chart-loading-spinner{
+    width:26px; height:26px; border-radius:50%;
+    border:3px solid var(--line); border-top-color:var(--accent);
+    animation:spin .8s linear infinite;
+  }
+  .chart-loading-text{font-size:12px; color:var(--sub); font-family:var(--mono);}
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  .price-tag{
+    position:absolute; right:0; font-family:var(--mono); font-size:11px; font-weight:700;
+    padding:2px 6px; border-radius:4px 0 0 4px; color:#fff; pointer-events:none;
+  }
+  .line-tag{
+    position:absolute; right:0; font-family:var(--mono); font-size:10px; font-weight:700;
+    padding:1px 6px; border-radius:4px 0 0 4px; pointer-events:none; color:#fff;
+  }
+
+  /* ===== POSITIONS PANEL (full width, below chart + order panel) ===== */
+  .positions-panel{
+    border-top:1px solid var(--line);
+    background:var(--panel);
+    max-height:320px;
+    flex-shrink:0;
+    display:flex; flex-direction:column;
+  }
+  .positions-head{
+    display:flex; align-items:center; gap:16px;
+    padding:9px 14px; border-bottom:1px solid var(--line);
+    flex-wrap:wrap;
+    row-gap:8px;
+  }
+  .positions-tab{
+    font-size:12px; font-weight:700; color:var(--sub); padding:4px 2px;
+    border-bottom:2px solid transparent; transition:.15s;
+  }
+  .positions-tab.active{color:var(--text); border-color:var(--accent);}
+  .positions-count{
+    background:var(--panel2); color:var(--sub); font-size:10px; padding:1px 6px; border-radius:8px; margin-left:4px;
+  }
+  .bulk-actions{display:flex; gap:6px; margin-left:auto; flex-wrap:wrap;}
+  .bulk-btn{
+    font-size:10.5px; font-weight:700; padding:5px 10px; border-radius:6px;
+    border:1px solid var(--line); color:var(--sub); transition:.15s; white-space:nowrap;
+  }
+  .bulk-btn:hover:not(:disabled){color:var(--text); border-color:var(--sub2); background:var(--panel2);}
+  .bulk-btn:disabled{opacity:.35; cursor:not-allowed;}
+  .bulk-btn.profit{color:var(--green); border-color:rgba(18,184,134,.3);}
+  .bulk-btn.profit:hover:not(:disabled){background:rgba(18,184,134,.1);}
+  .bulk-btn.loss{color:var(--red); border-color:rgba(240,71,90,.3);}
+  .bulk-btn.loss:hover:not(:disabled){background:rgba(240,71,90,.1);}
+  .bulk-btn.all{color:var(--amber); border-color:rgba(232,176,75,.3);}
+  .bulk-btn.all:hover:not(:disabled){background:rgba(232,176,75,.1);}
+  .positions-body{overflow-y:auto; flex:1;}
+  .pos-empty{padding:30px 14px; text-align:center; color:var(--sub2); font-size:12px;}
+
+  /* ===== POSITION CARDS (Binance-style) ===== */
+  .pos-cards{display:flex; flex-direction:column; gap:1px; background:var(--line-soft);}
+  .pos-card{
+    background:var(--panel); padding:14px;
+    display:flex; flex-direction:column; gap:14px;
+  }
+  .pos-card-head{
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  }
+  .pos-card-badge{
+    width:22px; height:22px; border-radius:5px; background:var(--panel2);
+    display:flex; align-items:center; justify-content:center; font-weight:900; font-size:12px; flex-shrink:0;
+  }
+  .pos-card-sym{font-weight:800; font-size:15px;}
+  .pos-card-meta{
+    color:var(--sub); font-size:11px; display:flex; align-items:center; gap:6px;
+  }
+  .pos-card-meta .side-txt.long{color:var(--green); font-weight:700;}
+  .pos-card-meta .side-txt.short{color:var(--red); font-weight:700;}
+  .pos-card-close-x{margin-left:auto; color:var(--sub2); font-size:16px; padding:2px 6px;}
+  .pos-card-close-x:hover{color:var(--text);}
+
+  .pos-card-pnl-row{display:flex; justify-content:space-between; align-items:flex-end;}
+  .pos-card-pnl-block .lbl, .pos-card-roe-block .lbl{font-size:11px; color:var(--sub); margin-bottom:4px;}
+  .pos-card-pnl-block .val{font-family:var(--mono); font-size:24px; font-weight:700; line-height:1;}
+  .pos-card-roe-block{text-align:right;}
+  .pos-card-roe-block .val{font-family:var(--mono); font-size:20px; font-weight:700; line-height:1;}
+
+  .pos-card-grid{
+    display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px 8px;
+  }
+  .pos-card-cell .lbl{font-size:10.5px; color:var(--sub); margin-bottom:3px;}
+  .pos-card-cell .val{font-family:var(--mono); font-size:13.5px; font-weight:700; color:var(--text);}
+  .pos-card-cell .val.risk-low{color:var(--green);}
+  .pos-card-cell .val.risk-mid{color:var(--amber);}
+  .pos-card-cell .val.risk-high{color:var(--red);}
+
+  .pos-card-actions{display:flex; gap:8px;}
+  .pos-card-btn{
+    flex:1; text-align:center; padding:10px 4px; border-radius:8px;
+    background:var(--panel2); border:1px solid var(--line);
+    font-size:11.5px; font-weight:700; color:var(--text); transition:.15s;
+  }
+  .pos-card-btn:hover{border-color:var(--sub2);}
+  .pos-card-btn.danger{color:var(--red);}
+  .pos-card-btn.danger:hover{background:rgba(240,71,90,.1); border-color:rgba(240,71,90,.35);}
+  .pos-card-btn.tpsl-active{color:var(--accent); border-color:rgba(79,140,255,.4); background:rgba(79,140,255,.08);}
+  .pos-table{width:100%; border-collapse:collapse;}
+  .pos-table thead th{
+    position:sticky; top:0; background:var(--panel);
+    text-align:left; font-size:10px; text-transform:uppercase; letter-spacing:.4px;
+    color:var(--sub2); font-weight:600; padding:8px 10px; border-bottom:1px solid var(--line);
+    white-space:nowrap;
+  }
+  .pos-table tbody td{
+    padding:9px 10px; border-bottom:1px solid var(--line-soft); font-size:12px; white-space:nowrap;
+  }
+  .pos-table tbody tr:hover{background:#141a24;}
+  .pos-side-badge{
+    display:inline-block; padding:1px 7px; border-radius:4px; font-size:10.5px; font-weight:800;
+  }
+  .pos-side-badge.long{background:rgba(18,184,134,.15); color:var(--green);}
+  .pos-side-badge.short{background:rgba(240,71,90,.15); color:var(--red);}
+  .pos-actions{display:flex; gap:5px;}
+  .btn-mini{
+    padding:4px 8px; border-radius:5px; font-size:10.5px; font-weight:700;
+    border:1px solid var(--line);
+  }
+  .btn-mini:hover{border-color:var(--sub2);}
+  .btn-mini.close-btn{color:var(--red); border-color:rgba(240,71,90,.3);}
+  .btn-mini.close-btn:hover{background:rgba(240,71,90,.1);}
+  .btn-mini.tpsl-btn{color:var(--accent); border-color:rgba(79,140,255,.3);}
+  .btn-mini.tpsl-btn:hover{background:rgba(79,140,255,.1);}
+
+  /* ===== RIGHT: ORDER PANEL ===== */
+  .order-panel{padding:14px; display:flex; flex-direction:column; gap:12px; overflow-y:auto;}
+
+  .seg-control{
+    display:flex; background:var(--panel2); border-radius:8px; padding:3px; gap:3px;
+  }
+  .seg-btn{
+    flex:1; text-align:center; padding:7px 0; border-radius:6px; font-size:11.5px; font-weight:700;
+    color:var(--sub); transition:.15s;
+  }
+  .seg-btn.active{background:var(--line); color:var(--text);}
+
+  .row-2{display:flex; gap:8px;}
+  .pill-select{
+    flex:1; display:flex; align-items:center; justify-content:center; gap:5px;
+    background:var(--panel2); border:1px solid var(--line); border-radius:7px;
+    padding:8px 10px; font-size:12px; font-weight:700; position:relative;
+  }
+  .pill-select:hover{border-color:var(--sub2);}
+  .pill-select .chev{color:var(--sub); font-size:9px;}
+
+  .field-label{
+    display:flex; justify-content:space-between; align-items:center;
+    font-size:11px; color:var(--sub); margin-bottom:6px;
+  }
+  .field-label .avail{font-family:var(--mono); color:var(--sub2);}
+
+  .input-box{
+    display:flex; align-items:center; background:var(--panel2);
+    border:1px solid var(--line); border-radius:7px; padding:0 10px;
+    transition:.15s;
+  }
+  .input-box:focus-within{border-color:var(--accent);}
+  .input-box input{
+    flex:1; padding:9px 0; font-family:var(--mono); font-size:13px; color:var(--text);
+  }
+  .input-box .suffix{color:var(--sub); font-size:11.5px; font-weight:600;}
+  .input-box .stepper{display:flex; flex-direction:column; margin-left:6px;}
+  .input-box .stepper button{color:var(--sub); font-size:9px; line-height:1; padding:2px;}
+  .input-box .stepper button:hover{color:var(--text);}
+
+  .order-type-row{display:flex; gap:6px;}
+  .otype-btn{
+    flex:1; padding:7px 0; text-align:center; font-size:11px; font-weight:700;
+    border:1px solid var(--line); border-radius:7px; color:var(--sub);
+  }
+  .otype-btn.active{border-color:var(--accent); color:var(--accent); background:rgba(79,140,255,.08);}
+
+  /* slider */
+  .slider-wrap{padding:2px 6px 0;}
+  .slider-track{
+    position:relative; height:4px; background:var(--line); border-radius:2px; margin:14px 0 6px;
+  }
+  .slider-fill{position:absolute; left:0; top:0; height:100%; background:var(--accent); border-radius:2px;}
+  .slider-tick{
+    position:absolute; top:-4px; width:2px; height:12px; background:var(--sub2); transform:translateX(-1px);
+  }
+  .slider-handle{
+    position:absolute; top:50%; width:15px; height:15px; border-radius:50%;
+    background:#fff; border:3px solid var(--accent); transform:translate(-50%,-50%);
+    cursor:grab; box-shadow:0 2px 6px rgba(0,0,0,.4);
+  }
+  .slider-handle:active{cursor:grabbing;}
+  .slider-labels{display:flex; justify-content:space-between; font-size:9.5px; color:var(--sub2); font-family:var(--mono);}
+  .slider-pct{text-align:center; font-family:var(--mono); font-size:12px; color:var(--accent); font-weight:700; margin-top:2px;}
+
+  .info-row{display:flex; justify-content:space-between; font-size:11.5px; padding:2px 0;}
+  .info-row .k{color:var(--sub);}
+  .info-row .v{font-family:var(--mono); color:var(--text); font-weight:600;}
+
+  .tpsl-toggle{
+    display:flex; align-items:center; gap:8px; font-size:11.5px; color:var(--sub);
+    padding:2px 0; cursor:pointer; user-select:none;
+  }
+  .checkbox{
+    width:15px; height:15px; border-radius:4px; border:1.5px solid var(--sub2);
+    display:flex; align-items:center; justify-content:center; transition:.15s; flex-shrink:0;
+  }
+  .checkbox.checked{background:var(--accent); border-color:var(--accent);}
+  .checkbox.checked::after{content:'✓'; color:#fff; font-size:10px; font-weight:900;}
+  .tpsl-fields{display:none; flex-direction:column; gap:8px; padding-top:2px;}
+  .tpsl-fields.show{display:flex;}
+  .tpsl-field-row{display:flex; gap:6px; align-items:center;}
+  .tpsl-field-row .tag{
+    font-size:10px; font-weight:800; width:26px; flex-shrink:0; text-align:center; padding:2px 0; border-radius:4px;
+  }
+  .tpsl-field-row .tag.tp{color:var(--green); background:rgba(18,184,134,.12);}
+  .tpsl-field-row .tag.sl{color:var(--red); background:rgba(240,71,90,.12);}
+  .tpsl-est{font-size:9.5px; color:var(--sub2); font-family:var(--mono); margin-left:32px;}
+
+  .action-btns{display:flex; gap:8px; margin-top:4px;}
+  .btn-long, .btn-short{
+    flex:1; padding:13px 0; border-radius:9px; font-weight:800; font-size:13.5px;
+    text-align:center; transition:.15s; letter-spacing:.2px;
+  }
+  .btn-long{background:var(--green); color:#04140f;}
+  .btn-long:hover{background:#16c794;}
+  .btn-short{background:var(--red); color:#1a0407;}
+  .btn-short:hover{background:#f55c6d;}
+  .btn-long:disabled, .btn-short:disabled{opacity:.4; cursor:not-allowed;}
+
+  .liq-warning{
+    display:none; font-size:10.5px; color:var(--amber); background:rgba(232,176,75,.1);
+    border:1px solid rgba(232,176,75,.25); border-radius:6px; padding:6px 8px; align-items:center; gap:6px;
+  }
+  .liq-warning.show{display:flex;}
+
+  /* ===== ACCOUNT STATS BAR ===== */
+  .stats-bar{
+    display:flex; gap:0; padding:10px 14px; border-top:1px solid var(--line);
+    background:var(--panel2); flex-wrap:wrap;
+  }
+  .stat-item{padding:0 16px; border-right:1px solid var(--line); }
+  .stat-item:first-child{padding-left:0;}
+  .stat-item:last-child{border-right:none;}
+  .stat-item .lbl{font-size:9.5px; color:var(--sub2); text-transform:uppercase; letter-spacing:.4px;}
+  .stat-item .val{font-family:var(--mono); font-size:12.5px; font-weight:700; margin-top:2px;}
+
+  /* ===== MODAL ===== */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(0,0,0,.6); backdrop-filter:blur(2px);
+    display:none; align-items:center; justify-content:center; z-index:1000; padding:16px;
+  }
+  .modal-overlay.show{display:flex;}
+  .modal-box{
+    background:var(--panel2); border:1px solid var(--line); border-radius:12px;
+    width:100%; max-width:340px; padding:18px; box-shadow:0 20px 60px rgba(0,0,0,.6);
+  }
+  .modal-title{font-size:14px; font-weight:800; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center;}
+  .modal-close{color:var(--sub); font-size:18px; padding:2px 6px;}
+  .modal-close:hover{color:var(--text);}
+  .modal-field{margin-bottom:12px;}
+  .modal-field label{font-size:11px; color:var(--sub); display:block; margin-bottom:6px;}
+  .modal-actions{display:flex; gap:8px; margin-top:16px;}
+  .modal-btn{flex:1; padding:10px 0; border-radius:8px; font-weight:700; font-size:12.5px; text-align:center;}
+  .modal-btn.cancel{background:var(--panel); border:1px solid var(--line); color:var(--sub);}
+  .modal-btn.confirm{background:var(--accent); color:#fff;}
+  .modal-btn.danger{background:var(--red); color:#fff;}
+
+  /* ===== TOAST ===== */
+  .toast-wrap{
+    position:fixed; top:16px; right:16px; z-index:2000;
+    display:flex; flex-direction:column; gap:8px; max-width:300px;
+  }
+  .toast{
+    background:var(--panel2); border:1px solid var(--line); border-left:3px solid var(--accent);
+    border-radius:8px; padding:10px 12px; font-size:12px; box-shadow:0 8px 24px rgba(0,0,0,.5);
+    animation:slideIn .25s ease;
+  }
+  .toast.success{border-left-color:var(--green);}
+  .toast.error{border-left-color:var(--red);}
+  .toast .t-title{font-weight:700; margin-bottom:2px;}
+  .toast .t-body{color:var(--sub); font-size:11px;}
+  @keyframes slideIn{from{transform:translateX(30px); opacity:0;} to{transform:translateX(0); opacity:1;}}
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 880px){
+    .top-row{flex-direction:column;}
+    .right-col{width:100%; border-left:none; border-top:1px solid var(--line);}
+    .chart-wrap{min-height:280px;}
+    .positions-panel{max-height:260px;}
+  }
+  @media (max-width: 520px){
+    .topbar{gap:8px;}
+    .balance-box{display:none;}
+    .stats-bar{overflow-x:auto; flex-wrap:nowrap;}
+    .bulk-actions{width:100%; margin-left:0;}
+    .bulk-btn{flex:1;}
+    .pos-card-grid{grid-template-columns:1fr 1fr;}
+    .pos-card-actions{flex-wrap:wrap;}
+    .pos-card-btn{min-width:calc(50% - 4px);}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="brand"><span class="dot"></span>Danz</div>
+    <div class="pair-select" id="pairSelectBtn">
+      <span class="sym" id="pairSymDisplay">BTCUSDT</span>
+      <span class="chev">▾</span>
+      <div class="pair-dropdown" id="pairDropdown"></div>
+    </div>
+    <div class="pair-price num" id="topPrice">0.00</div>
+    <div class="pair-change num" id="topChange">+0.00%</div>
+    <div class="data-source-badge sim" id="dataSourceBadge" title="Status sumber harga">SIM</div>
+    <div class="topbar-right">
+      <div class="balance-box">
+        <div class="lbl">Saldo Wallet</div>
+        <div class="val num" id="topBalance">$0.00</div>
+      </div>
+      <button class="reset-btn" id="resetBtn">↺ Atur Saldo</button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="top-row">
+      <div class="center-col">
+
+        <!-- chart toolbar -->
+        <div class="chart-toolbar" id="tfBar"></div>
+
+        <!-- chart -->
+        <div class="chart-wrap" id="chartWrap">
+          <canvas id="chartCanvas"></canvas>
+          <div class="chart-hint">geser chart bebas (kiri/kanan/atas/bawah) · geser sumbu harga (kanan) untuk regangkan/mampatkan skala · klik 2x sumbu harga untuk reset</div>
+          <div class="chart-loading" id="chartLoading">
+            <div class="chart-loading-spinner"></div>
+            <div class="chart-loading-text">Menghubungkan ke Binance...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ORDER PANEL -->
+      <div class="right-col">
+        <div class="order-panel">
+
+          <div class="row-2">
+            <div class="pill-select" id="marginModeBtn">
+              <span id="marginModeLabel">Isolated</span><span class="chev">▾</span>
+            </div>
+            <div class="pill-select" id="leverageBtn">
+              <span id="leverageLabel">20x</span><span class="chev">▾</span>
+            </div>
+          </div>
+
+          <div>
+            <div class="field-label">Jenis Order</div>
+            <div class="order-type-row" id="orderTypeRow">
+              <div class="otype-btn active" data-type="market">Market</div>
+              <div class="otype-btn" data-type="limit">Limit</div>
+            </div>
+          </div>
+
+          <div id="limitPriceWrap" style="display:none;">
+            <div class="field-label">Harga Limit</div>
+            <div class="input-box">
+              <input type="text" id="limitPriceInput" inputmode="decimal" placeholder="0.00">
+              <span class="suffix">USDT</span>
+            </div>
+          </div>
+
+          <div>
+            <div class="field-label"><span>Jumlah Margin</span><span class="avail num" id="availMargin">Avail: $0.00</span></div>
+            <div class="input-box">
+              <input type="text" id="marginInput" inputmode="decimal" placeholder="0.00">
+              <span class="suffix">USDT</span>
+            </div>
+          </div>
+
+          <div class="slider-wrap">
+            <div class="slider-track" id="sliderTrack">
+              <div class="slider-fill" id="sliderFill"></div>
+              <div class="slider-tick" style="left:0%"></div>
+              <div class="slider-tick" style="left:25%"></div>
+              <div class="slider-tick" style="left:50%"></div>
+              <div class="slider-tick" style="left:75%"></div>
+              <div class="slider-tick" style="left:100%"></div>
+              <div class="slider-handle" id="sliderHandle"></div>
+          </div>
+          <div class="slider-labels"><span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div>
+          <div class="slider-pct" id="sliderPct">0% dari saldo tersedia</div>
+        </div>
+
+        <div style="border-top:1px solid var(--line-soft); padding-top:10px; display:flex; flex-direction:column; gap:4px;">
+          <div class="info-row"><span class="k">Ukuran Posisi</span><span class="v num" id="infoSize">0.000 —</span></div>
+          <div class="info-row"><span class="k">Est. Harga Likuidasi</span><span class="v num" id="infoLiq">--</span></div>
+          <div class="info-row"><span class="k">Biaya (Fee)</span><span class="v num" id="infoFee">0.00 USDT</span></div>
+        </div>
+
+        <div style="border-top:1px solid var(--line-soft); padding-top:10px;">
+          <div class="tpsl-toggle" id="tpslToggle">
+            <div class="checkbox" id="tpslCheckbox"></div>
+            <span>Atur Take Profit / Stop Loss</span>
+          </div>
+          <div class="tpsl-fields" id="tpslFields">
+            <div>
+              <div class="tpsl-field-row">
+                <span class="tag tp">TP</span>
+                <div class="input-box" style="flex:1;">
+                  <input type="text" id="tpPriceInput" inputmode="decimal" placeholder="Harga">
+                  <span class="suffix">USDT</span>
+                </div>
+              </div>
+              <div class="tpsl-est" id="tpEstText"></div>
+            </div>
+            <div>
+              <div class="tpsl-field-row">
+                <span class="tag sl">SL</span>
+                <div class="input-box" style="flex:1;">
+                  <input type="text" id="slPriceInput" inputmode="decimal" placeholder="Harga">
+                  <span class="suffix">USDT</span>
+                </div>
+              </div>
+              <div class="tpsl-est" id="slEstText"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="liq-warning" id="liqWarning">⚠ Margin tidak cukup / melebihi saldo tersedia</div>
+
+        <div class="action-btns">
+          <button class="btn-long" id="btnLong">Buy / Long</button>
+          <button class="btn-short" id="btnShort">Sell / Short</button>
+        </div>
+
+        </div>
+
+        <!-- account stats -->
+        <div class="stats-bar">
+          <div class="stat-item"><div class="lbl">Saldo</div><div class="val num" id="statBalance">$0</div></div>
+          <div class="stat-item"><div class="lbl">Unrealized PnL</div><div class="val num" id="statUpnl">$0</div></div>
+          <div class="stat-item"><div class="lbl">Margin Terpakai</div><div class="val num" id="statMargin">$0</div></div>
+          <div class="stat-item"><div class="lbl">Ekuitas</div><div class="val num" id="statEquity">$0</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- positions — full width, below chart & order panel -->
+    <div class="positions-panel">
+      <div class="positions-head">
+        <div class="positions-tab active" data-tab="open">Posisi Terbuka <span class="positions-count" id="openCount">0</span></div>
+        <div class="positions-tab" data-tab="history">Riwayat</div>
+        <div class="bulk-actions" id="bulkActions">
+          <button class="bulk-btn profit" id="closeProfitBtn">Tutup Profit</button>
+          <button class="bulk-btn loss" id="closeLossBtn">Tutup Loss</button>
+          <button class="bulk-btn all" id="closeAllBtn">Tutup Semua</button>
+        </div>
+      </div>
+      <div class="positions-body" id="positionsBody"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box" id="modalBox"></div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ============================================================
+   DATA & STATE
+============================================================ */
+const PAIRS = [
+  {sym:'BTCUSDT', base:'BTC', price:97250, vol:0.0018, maxLev:125},
+  {sym:'ETHUSDT', base:'ETH', price:3410, vol:0.0022, maxLev:100},
+  {sym:'SOLUSDT', base:'SOL', price:198, vol:0.0032, maxLev:75},
+  {sym:'LTCUSDT', base:'LTC', price:104.5, vol:0.0028, maxLev:75},
+  {sym:'TRXUSDT', base:'TRX', price:0.2685, vol:0.003, maxLev:50},
+  {sym:'XRPUSDT', base:'XRP', price:2.34, vol:0.0035, maxLev:75},
+  {sym:'DOGEUSDT', base:'DOGE', price:0.3821, vol:0.0045, maxLev:50},
+  {sym:'ADAUSDT', base:'ADA', price:0.912, vol:0.0038, maxLev:50},
+];
+
+const TIMEFRAMES = [
+  {key:'1m', label:'1m', sec:60},
+  {key:'5m', label:'5m', sec:300},
+  {key:'15m', label:'15m', sec:900},
+  {key:'1h', label:'1H', sec:3600},
+  {key:'4h', label:'4H', sec:14400},
+  {key:'1d', label:'1D', sec:86400},
+];
+
+const FEE_MAKER = 0.0002; // 0.02%
+const FEE_TAKER = 0.0004; // 0.04%
+const MMR = 0.005; // maintenance margin rate (simplified, flat)
+
+let state = {
+  balance: 10000,
+  pairIndex: 0,
+  marginMode: 'isolated', // isolated | cross
+  leverage: 20,
+  orderType: 'market',
+  sliderPct: 0,
+  tpslEnabled: false,
+  activeTf: '4h',
+  positions: [],   // {id, sym, side, entry, size, qty, margin, leverage, mode, tp, sl, liq, openTime}
+  history: [],
+  candleData: {},  // per pair per tf -> array of candles
+  nextId: 1,
+};
+
+function pair(){ return PAIRS[state.pairIndex]; }
+
+/* ============================================================
+   PRICE ENGINE — hybrid: real Binance klines when reachable,
+   pure simulation when not. No mixing/rebasing between the two:
+   whichever source is active, ALL candles for a pair+timeframe
+   come from that one source only.
+============================================================ */
+function seedRandom(seed){
+  let s = seed % 2147483647;
+  if (s<=0) s += 2147483646;
+  return function(){ s = s*16807 % 2147483647; return (s-1)/2147483646; };
+}
+
+function genCandles(p, tf, count, basePrice){
+  const anchor = basePrice || p.price;
+  const rnd = seedRandom(Math.floor(p.price*1000) + tf.sec + p.sym.length*7);
+  let price = anchor * (0.94 + rnd()*0.12);
+  const candles = [];
+  const now = Math.floor(Date.now()/1000);
+  const startTime = now - count*tf.sec;
+  for(let i=0;i<count;i++){
+    const t = startTime + i*tf.sec;
+    const open = price;
+    let drift = (rnd()-0.5) * p.vol * 2;
+    if(rnd() < 0.06) drift *= 3.5;
+    const close = open * (1+drift);
+    const high = Math.max(open,close) * (1 + rnd()*p.vol*0.8);
+    const low = Math.min(open,close) * (1 - rnd()*p.vol*0.8);
+    candles.push({t, o:open, h:high, l:low, c:close});
+    price = close;
+  }
+  if(candles.length){
+    const last = candles[candles.length-1];
+    last.c = anchor;
+    last.h = Math.max(last.h, anchor);
+    last.l = Math.min(last.l, anchor);
+  }
+  return candles;
+}
+
+// live price ticking for all pairs
+const livePrices = {};
+PAIRS.forEach(p=>{ livePrices[p.sym] = p.price; });
+const priceRnd = seedRandom(99991);
+
+// dataSource: 'connecting' (initial load, chart hidden) | 'live' | 'sim'
+let dataSource = 'connecting';
+const candleSource = {}; // key `${sym}_${tf}` -> 'live' | 'sim', tracks provenance per series
+
+function candleKey(sym, tfKey){ return sym+'_'+tfKey; }
+
+// Fetch real OHLC candles from Binance for one pair+timeframe.
+// Returns an array of {t,o,h,l,c} or null on failure.
+async function fetchLiveKlines(sym, tfKey, limit){
+  const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${sym}&interval=${tfKey}&limit=${limit}`);
+  if(!res.ok) throw new Error('klines fetch failed');
+  const rows = await res.json();
+  return rows.map(r=>({
+    t: Math.floor(r[0]/1000),
+    o: parseFloat(r[1]),
+    h: parseFloat(r[2]),
+    l: parseFloat(r[3]),
+    c: parseFloat(r[4]),
+  }));
+}
+
+// Ensures candles exist for a pair+timeframe. Tries live first; falls back
+// to simulation. Never mixes sources within one series.
+async function ensureCandlesAsync(p, tfKey){
+  const tf = TIMEFRAMES.find(x=>x.key===tfKey);
+  const key = candleKey(p.sym, tfKey);
+  try{
+    const candles = await fetchLiveKlines(p.sym, tfKey, 180);
+    if(candles && candles.length){
+      state.candleData[key] = candles;
+      candleSource[key] = 'live';
+      livePrices[p.sym] = candles[candles.length-1].c;
+      return true;
+    }
+    throw new Error('empty klines');
+  } catch(e){
+    const basis = livePrices[p.sym] || p.price;
+    state.candleData[key] = genCandles(p, tf, 180, basis);
+    candleSource[key] = 'sim';
+    return false;
+  }
+}
+
+// Synchronous variant used by code paths that can't await (chart draw, etc).
+// Only generates a simulation series if nothing exists yet; never fetches.
+function ensureCandles(p, tfKey){
+  const key = candleKey(p.sym, tfKey);
+  if(!state.candleData[key]){
+    const tf = TIMEFRAMES.find(x=>x.key===tfKey);
+    const basis = livePrices[p.sym] || p.price;
+    state.candleData[key] = genCandles(p, tf, 180, basis);
+    candleSource[key] = 'sim';
+  }
+  return state.candleData[key];
+}
+
+// Loads (or reloads) the currently active pair+timeframe from live data,
+// discarding whatever was there before — a full refresh, not a rebase.
+async function refreshActiveSeries(){
+  const p = pair();
+  await ensureCandlesAsync(p, state.activeTf);
+  drawChart();
+}
+
+async function connectToBinance(){
+  const p = pair();
+  const ok = await ensureCandlesAsync(p, state.activeTf);
+  dataSource = ok ? 'live' : 'sim';
+  updateDataSourceBadge();
+  hideChartLoading();
+  renderAll();
+}
+
+async function pollLiveStatus(){
+  const p = pair();
+  try{
+    const res = await fetch('https://api.binance.com/api/v3/ticker/price?symbol='+p.sym);
+    if(!res.ok) throw new Error('bad response');
+    const d = await res.json();
+    const price = parseFloat(d.price);
+    if(!(price>0)) throw new Error('bad price');
+
+    const wasSim = dataSource !== 'live';
+    dataSource = 'live';
+    updateDataSourceBadge();
+
+    if(wasSim){
+      // Reconnected after being on simulation: fully refresh the chart
+      // instead of rebasing, exactly as requested.
+      toast('Terhubung ke Binance', 'Chart dimuat ulang dengan data live.', 'success');
+      await refreshActiveSeries();
+    } else {
+      // Already live: just keep the running price honest between candle
+      // refreshes (candles themselves are still real historical data).
+      livePrices[p.sym] = price;
+    }
+  } catch(e){
+    if(dataSource === 'live'){
+      toast('Koneksi Binance terputus', 'Melanjutkan dengan simulasi harga acak.', 'error');
+    }
+    dataSource = 'sim';
+    updateDataSourceBadge();
+  }
+}
+
+function updateDataSourceBadge(){
+  const el = document.getElementById('dataSourceBadge');
+  if(!el) return;
+  if(dataSource==='live'){
+    el.textContent = 'LIVE';
+    el.className = 'data-source-badge live';
+    el.title = 'Data candle & harga langsung dari Binance';
+  } else if(dataSource==='connecting'){
+    el.textContent = 'CONNECTING';
+    el.className = 'data-source-badge sim';
+    el.title = 'Menghubungkan ke Binance...';
+  } else {
+    el.textContent = 'SIM';
+    el.className = 'data-source-badge sim';
+    el.title = 'Binance tidak terjangkau — menggunakan simulasi harga';
+  }
+}
+
+function showChartLoading(){
+  const el = document.getElementById('chartLoading');
+  if(el) el.classList.add('show');
+}
+function hideChartLoading(){
+  const el = document.getElementById('chartLoading');
+  if(el) el.classList.remove('show');
+}
+
+setInterval(pollLiveStatus, 15000); // check connection / keep price fresh every 15s
+
+// While live, refresh just the current pair's mark price more frequently so
+// the chart's last candle updates smoothly without re-fetching full klines.
+async function pollActivePairPrice(){
+  if(dataSource !== 'live') return;
+  const p = pair();
+  try{
+    const res = await fetch('https://api.binance.com/api/v3/ticker/price?symbol='+p.sym);
+    if(!res.ok) throw new Error('bad response');
+    const d = await res.json();
+    const price = parseFloat(d.price);
+    if(!(price>0)) return;
+    livePrices[p.sym] = price;
+
+    // extend the real candle series with this fresh tick (still live data,
+    // not simulated) so the chart visibly moves between full klines refreshes
+    TIMEFRAMES.forEach(tf=>{
+      const key = candleKey(p.sym, tf.key);
+      if(candleSource[key] !== 'live') return;
+      const arr = state.candleData[key];
+      if(!arr || !arr.length) return;
+      const last = arr[arr.length-1];
+      const nowBucket = Math.floor(Date.now()/1000/tf.sec)*tf.sec;
+      if(last.t === nowBucket){
+        last.c = price;
+        last.h = Math.max(last.h, price);
+        last.l = Math.min(last.l, price);
+      } else if(nowBucket > last.t){
+        arr.push({t:nowBucket, o:last.c, h:price, l:price, c:price});
+        if(arr.length>220) arr.shift();
+      }
+    });
+  } catch(e){
+    // silent — pollLiveStatus (every 15s) is the source of truth for
+    // connectivity state; this just skips an update if it hiccups
+  }
+}
+setInterval(pollActivePairPrice, 3000);
+
+function tickPrices(){
+  PAIRS.forEach(p=>{
+    if(dataSource==='live' && p.sym===pair().sym) return; // live price is set by pollActivePairPrice instead
+    let price = livePrices[p.sym];
+    let drift = (priceRnd()-0.5) * p.vol * 0.5;
+    if(priceRnd() < 0.015) drift *= 4;
+    price = price * (1+drift);
+    livePrices[p.sym] = price;
+
+    // update last candle of every timeframe for this pair — only for series
+    // that are themselves simulated, so we never mutate real Binance candles
+    TIMEFRAMES.forEach(tf=>{
+      const key = candleKey(p.sym, tf.key);
+      if(candleSource[key] !== 'sim') return;
+      const arr = state.candleData[key];
+      if(!arr) return;
+      const last = arr[arr.length-1];
+      const nowBucket = Math.floor(Date.now()/1000/tf.sec)*tf.sec;
+      if(last.t === nowBucket || nowBucket - last.t < tf.sec){
+        last.c = price;
+        last.h = Math.max(last.h, price);
+        last.l = Math.min(last.l, price);
+      } else {
+        arr.push({t:nowBucket, o:last.c, h:price, l:price, c:price});
+        if(arr.length>220) arr.shift();
+      }
+    });
+  });
+  checkPositionsAgainstPrice();
+  renderAll();
+}
+setInterval(tickPrices, 900);
+
+/* ============================================================
+   FORMATTING HELPERS
+============================================================ */
+function priceDecimals(p){
+  if(p.price >= 1000) return 2;
+  if(p.price >= 10) return 3;
+  if(p.price >= 1) return 4;
+  return 5;
+}
+function fmtPrice(v, p){
+  p = p || pair();
+  return v.toLocaleString('en-US', {minimumFractionDigits:priceDecimals(p), maximumFractionDigits:priceDecimals(p)});
+}
+function fmtUSD(v){
+  const sign = v<0?'-':'';
+  return sign+'$'+Math.abs(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function fmtQty(v, p){
+  p = p || pair();
+  const d = p.price>=100?4 : p.price>=1?3 : 1;
+  return v.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+}
+
+/* ============================================================
+   TOAST
+============================================================ */
+function toast(title, body, type){
+  const wrap = document.getElementById('toastWrap');
+  const el = document.createElement('div');
+  el.className = 'toast '+(type||'');
+  el.innerHTML = `<div class="t-title">${title}</div><div class="t-body">${body}</div>`;
+  wrap.appendChild(el);
+  setTimeout(()=>{ el.style.opacity='0'; el.style.transition='.3s'; setTimeout(()=>el.remove(),300); }, 3200);
+}
+
+/* ============================================================
+   PAIR DROPDOWN
+============================================================ */
+function renderPairDropdown(){
+  const dd = document.getElementById('pairDropdown');
+  dd.innerHTML = PAIRS.map((p,i)=>{
+    const price = livePrices[p.sym];
+    const chg = ((price - p.price)/p.price*100);
+    const cls = chg>=0?'up':'down';
+    return `<div class="pair-dd-item" data-idx="${i}">
+      <div class="l"><div class="n">${p.sym}</div><div class="lev">Maks ${p.maxLev}x</div></div>
+      <div class="r"><div class="p num">${fmtPrice(price,p)}</div><div class="c num ${cls}">${chg>=0?'+':''}${chg.toFixed(2)}%</div></div>
+    </div>`;
+  }).join('');
+  dd.querySelectorAll('.pair-dd-item').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      state.pairIndex = parseInt(el.dataset.idx);
+      onPairChanged();
+      dd.classList.remove('open');
+    });
+  });
+}
+
+function onPairChanged(){
+  const p = pair();
+  document.getElementById('pairSymDisplay').textContent = p.sym;
+  if(state.leverage > p.maxLev) state.leverage = p.maxLev;
+  document.getElementById('leverageLabel').textContent = state.leverage+'x';
+  document.getElementById('limitPriceInput').value = '';
+  document.getElementById('marginInput').value='';
+  state.sliderPct = 0;
+  updateSlider();
+  chartPanOffset = 0;
+  manualPriceRange = null;
+
+  const key = candleKey(p.sym, state.activeTf);
+  if(state.candleData[key]){
+    renderAll();
+  } else {
+    showChartLoading();
+    ensureCandlesAsync(p, state.activeTf).then(()=>{
+      hideChartLoading();
+      renderAll();
+    });
+  }
+}
+
+document.getElementById('pairSelectBtn').addEventListener('click', (e)=>{
+  renderPairDropdown();
+  document.getElementById('pairDropdown').classList.toggle('open');
+  e.stopPropagation();
+});
+document.addEventListener('click', ()=>{
+  document.getElementById('pairDropdown').classList.remove('open');
+});
+
+/* ============================================================
+   TIMEFRAME BAR + ZOOM
+============================================================ */
+let chartZoom = 1; // 1 = default view count, >1 = zoomed in (fewer candles), <1 zoomed out
+let chartPanOffset = 0; // candles from right edge
+const ZOOM_MIN = 0.4, ZOOM_MAX = 4;
+
+let candleWidthScale = 1; // 1 = normal candle body width, <1 = thinner, >1 = thicker/wider
+const CANDLE_WIDTH_MIN = 0.4, CANDLE_WIDTH_MAX = 2.2;
+function setCandleWidth(v){
+  candleWidthScale = Math.min(CANDLE_WIDTH_MAX, Math.max(CANDLE_WIDTH_MIN, v));
+  updateCandleWidthLabel();
+  drawChart();
+}
+function updateCandleWidthLabel(){
+  const el = document.getElementById('candleWidthLabel');
+  if(el) el.textContent = Math.round(candleWidthScale*100)+'%';
+}
+
+function renderTfBar(){
+  const bar = document.getElementById('tfBar');
+  bar.innerHTML = '';
+  TIMEFRAMES.forEach(tf=>{
+    const btn = document.createElement('div');
+    btn.className = 'tf-btn'+(tf.key===state.activeTf?' active':'');
+    btn.textContent = tf.label;
+    btn.addEventListener('click', ()=>{
+      state.activeTf = tf.key;
+      chartPanOffset = 0;
+      manualPriceRange = null;
+      renderTfBar();
+      const key = candleKey(pair().sym, tf.key);
+      if(state.candleData[key]){
+        drawChart();
+      } else {
+        showChartLoading();
+        ensureCandlesAsync(pair(), tf.key).then(()=>{
+          hideChartLoading();
+          drawChart();
+        });
+      }
+    });
+    bar.appendChild(btn);
+  });
+  const sep = document.createElement('div');
+  sep.className='toolbar-sep';
+  bar.appendChild(sep);
+
+  const zc = document.createElement('div');
+  zc.className='zoom-controls push-right';
+  zc.innerHTML = `
+    <button class="zoom-btn" id="zoomOutBtn" title="Perkecil (lebih sedikit candle terlihat)">−</button>
+    <span class="zoom-label" id="zoomLabel">100%</span>
+    <button class="zoom-btn" id="zoomInBtn" title="Perbesar">+</button>
+  `;
+  bar.appendChild(zc);
+  document.getElementById('zoomInBtn').addEventListener('click', ()=>{ setZoom(chartZoom*1.25); });
+  document.getElementById('zoomOutBtn').addEventListener('click', ()=>{ setZoom(chartZoom/1.25); });
+  updateZoomLabel();
+
+  const sep2 = document.createElement('div');
+  sep2.className='toolbar-sep';
+  bar.appendChild(sep2);
+
+  const cwc = document.createElement('div');
+  cwc.className='zoom-controls';
+  cwc.innerHTML = `
+    <button class="zoom-btn" id="candleThinBtn" title="Pipihkan candle">▯</button>
+    <span class="zoom-label" id="candleWidthLabel">100%</span>
+    <button class="zoom-btn" id="candleThickBtn" title="Panjangkan/tebalkan candle">▮</button>
+  `;
+  bar.appendChild(cwc);
+  document.getElementById('candleThickBtn').addEventListener('click', ()=>{ setCandleWidth(candleWidthScale*1.2); });
+  document.getElementById('candleThinBtn').addEventListener('click', ()=>{ setCandleWidth(candleWidthScale/1.2); });
+  updateCandleWidthLabel();
+}
+function setZoom(z){
+  chartZoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z));
+  updateZoomLabel();
+  drawChart();
+}
+function updateZoomLabel(){
+  const el = document.getElementById('zoomLabel');
+  if(el) el.textContent = Math.round(chartZoom*100)+'%';
+}
+
+/* ============================================================
+   CHART RENDERING (Canvas, candlesticks)
+============================================================ */
+const canvas = document.getElementById('chartCanvas');
+const ctx = canvas.getContext('2d');
+let chartLayout = null; // stores mapping for interactions
+
+function resizeCanvas(){
+  const wrap = document.getElementById('chartWrap');
+  const rect = wrap.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = rect.width*dpr;
+  canvas.height = rect.height*dpr;
+  canvas.style.width = rect.width+'px';
+  canvas.style.height = rect.height+'px';
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  drawChart();
+}
+window.addEventListener('resize', resizeCanvas);
+
+function drawChart(){
+  const wrap = document.getElementById('chartWrap');
+  const W = wrap.clientWidth, H = wrap.clientHeight;
+  if(W===0||H===0) return;
+  ctx.clearRect(0,0,W,H);
+
+  const p = pair();
+  const key = candleKey(p.sym, state.activeTf);
+  const all = state.candleData[key] || ensureCandles(p, state.activeTf);
+
+  const baseCount = 70;
+  const visibleCount = Math.max(20, Math.min(all.length, Math.round(baseCount/chartZoom)));
+  // chartPanOffset can go negative: that means the user has swiped past the
+  // most recent candle into empty "future" space (like TradingView). A
+  // negative offset is how many empty slots are shown after the last candle.
+  const futureSlots = chartPanOffset < 0 ? Math.min(Math.round(visibleCount*0.6), -chartPanOffset) : 0;
+  const clampedOffset = Math.max(0, chartPanOffset);
+  let endIdx = all.length - clampedOffset;
+  endIdx = Math.min(all.length, Math.max(visibleCount, endIdx));
+  const startIdx = Math.max(0, endIdx - (visibleCount - futureSlots));
+  const candles = all.slice(startIdx, endIdx);
+  if(candles.length===0) return;
+  const totalSlots = candles.length + futureSlots;
+
+  const padL = 8, padR = 66, padT = 14, padB = 22;
+  const plotW = W - padL - padR;
+  const plotH = H - padT - padB;
+
+  // price range: manual (user dragged the price axis) takes priority,
+  // otherwise auto-fit to visible candles + any TP/SL/entry lines
+  const relevantPositions = state.positions.filter(ps=>ps.sym===p.sym);
+  let minP, maxP;
+  if(manualPriceRange){
+    minP = manualPriceRange.min;
+    maxP = manualPriceRange.max;
+  } else {
+    const auto = getAutoPriceRange(candles, relevantPositions);
+    minP = auto.min; maxP = auto.max;
+  }
+
+  function xAt(i){ return padL + (i+0.5)/totalSlots * plotW; }
+  function yAt(price){ return padT + (1 - (price-minP)/(maxP-minP)) * plotH; }
+
+  // grid
+  ctx.strokeStyle = '#1a2029';
+  ctx.lineWidth = 1;
+  const gridLines = 5;
+  ctx.font = '10px monospace';
+  ctx.fillStyle = '#57606f';
+  for(let i=0;i<=gridLines;i++){
+    const yy = padT + (i/gridLines)*plotH;
+    ctx.beginPath(); ctx.moveTo(padL,yy); ctx.lineTo(W-padR,yy); ctx.stroke();
+    const priceVal = maxP - (i/gridLines)*(maxP-minP);
+    ctx.fillText(fmtPrice(priceVal,p), W-padR+6, yy+3);
+  }
+
+  // candles — body width scales with both the available slot AND the
+  // user-adjustable "candle width" control (thin <-> thick), independent
+  // from how many candles are visible (chartZoom)
+  const cw = plotW/totalSlots;
+  const bodyW = Math.max(1, cw*0.62*candleWidthScale);
+  candles.forEach((c,i)=>{
+    const x = xAt(i);
+    const up = c.c >= c.o;
+    ctx.strokeStyle = up? '#12b886':'#f0475a';
+    ctx.fillStyle = up? '#12b886':'#f0475a';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x, yAt(c.h));
+    ctx.lineTo(x, yAt(c.l));
+    ctx.stroke();
+    const yO = yAt(c.o), yC = yAt(c.c);
+    const top = Math.min(yO,yC), h = Math.max(1, Math.abs(yC-yO));
+    ctx.fillRect(x-bodyW/2, top, bodyW, h);
+  });
+
+  // position lines: entry (blue dashed), TP (green), SL (red) — NO liquidation line
+  relevantPositions.forEach(ps=>{
+    drawHLine(ps.entry, '#8a97ab', 'Entry '+fmtPrice(ps.entry,p), padL, W-padR, yAt, false);
+    if(ps.tp) drawHLine(ps.tp, '#12b886', 'TP '+fmtPrice(ps.tp,p), padL, W-padR, yAt, true);
+    if(ps.sl) drawHLine(ps.sl, '#f0475a', 'SL '+fmtPrice(ps.sl,p), padL, W-padR, yAt, true);
+  });
+
+  // current price line
+  const curPrice = livePrices[p.sym];
+  const curY = yAt(curPrice);
+  ctx.strokeStyle = '#e7ecf3';
+  ctx.setLineDash([2,3]);
+  ctx.beginPath(); ctx.moveTo(padL,curY); ctx.lineTo(W-padR,curY); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // price tag on right
+  drawPriceTag(curY, fmtPrice(curPrice,p), curPrice>=candles[0].o?'#12b886':'#f0475a', W, padR);
+
+  // time labels
+  ctx.fillStyle = '#57606f';
+  ctx.font = '10px monospace';
+  const timeTicks = 4;
+  for(let i=0;i<=timeTicks;i++){
+    const idx = Math.floor(i/timeTicks*(candles.length-1));
+    const c = candles[idx];
+    const d = new Date(c.t*1000);
+    const label = state.activeTf==='1d' ? (d.getMonth()+1)+'/'+d.getDate() : d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
+    ctx.fillText(label, xAt(idx)-14, H-6);
+  }
+
+  chartLayout = {padL,padR,padT,padB,plotW,plotH,minP,maxP,candles,totalSlots,futureSlots,W,H};
+}
+
+function drawHLine(price, color, label, x1, x2, yAt, dashed){
+  const y = yAt(price);
+  if(y < 10 || y > (chartLayout? chartLayout.H-20 : 9999)) { /* still draw, may be near edges */ }
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1;
+  if(dashed) ctx.setLineDash([5,3]); else ctx.setLineDash([3,3]);
+  ctx.beginPath(); ctx.moveTo(x1,y); ctx.lineTo(x2,y); ctx.stroke();
+  ctx.setLineDash([]);
+  // label chip
+  ctx.font = '10px monospace';
+  const textW = ctx.measureText(label).width;
+  ctx.fillStyle = color;
+  ctx.fillRect(x1, y-9, textW+10, 14);
+  ctx.fillStyle = '#0b0e14';
+  ctx.fillText(label, x1+5, y+2);
+}
+
+function drawPriceTag(y, text, color, W, padR){
+  ctx.font = 'bold 11px monospace';
+  const textW = ctx.measureText(text).width;
+  ctx.fillStyle = color;
+  ctx.fillRect(W-padR, y-9, padR-2, 18);
+  ctx.fillStyle = '#0b0e14';
+  ctx.fillText(text, W-padR+6, y+4);
+}
+
+// ---- Manual price-scale state ----
+// null = auto-fit (default). When set, overrides the auto min/max range.
+let manualPriceRange = null; // {min, max}
+
+function getAutoPriceRange(candles, relevantPositions){
+  let minP = Infinity, maxP = -Infinity;
+  candles.forEach(c=>{ minP=Math.min(minP,c.l); maxP=Math.max(maxP,c.h); });
+  relevantPositions.forEach(ps=>{
+    minP = Math.min(minP, ps.entry);
+    maxP = Math.max(maxP, ps.entry);
+    if(ps.tp){ minP=Math.min(minP,ps.tp); maxP=Math.max(maxP,ps.tp); }
+    if(ps.sl){ minP=Math.min(minP,ps.sl); maxP=Math.max(maxP,ps.sl); }
+  });
+  const rangePad = (maxP-minP)*0.12 || maxP*0.01;
+  return {min: minP-rangePad, max: maxP+rangePad};
+}
+
+// wheel zoom (over the plot area) + drag pan (natural direction: drag right -> chart moves right)
+canvas.addEventListener('wheel', (e)=>{
+  e.preventDefault();
+  if(e.deltaY < 0) setZoom(chartZoom*1.1); else setZoom(chartZoom/1.1);
+}, {passive:false});
+
+// Which region of the chart a pointer-down started in, so drag behavior
+// matches what's under the cursor: plot area = pan candles, right price
+// gutter = adjust price scale, bottom time strip = adjust time zoom.
+function regionAt(clientX, clientY){
+  const rect = canvas.getBoundingClientRect();
+  const x = clientX - rect.left, y = clientY - rect.top;
+  if(!chartLayout) return 'plot';
+  const {padR, H, padB} = chartLayout;
+  // Price-scale strip: the labeled gutter on the right only.
+  if(x > chartLayout.W - padR) return 'price-scale';
+  // Time-scale strip: only the thin label row right at the bottom edge —
+  // padB itself is small (~22px), so give it a slightly larger, fixed hit
+  // area instead of the raw padding, otherwise normal pans started near the
+  // bottom of a short (mobile) chart get misread as time-axis drags.
+  const timeStripHeight = Math.max(padB, 26);
+  if(y > H - timeStripHeight) return 'time-scale';
+  return 'plot';
+}
+
+let dragMode = null; // 'plot' | 'price-scale' | 'time-scale'
+let dragStartX = 0, dragStartY = 0;
+let dragStartOffset = 0;
+let dragStartPriceRange = null;
+let dragStartZoom = 1;
+
+function beginDrag(clientX, clientY){
+  dragMode = regionAt(clientX, clientY);
+  dragStartX = clientX;
+  dragStartY = clientY;
+  dragStartOffset = chartPanOffset;
+  dragStartZoom = chartZoom;
+  if(dragMode === 'price-scale' || dragMode === 'plot'){
+    // lock in the current visible range (auto or manual) as the drag basis
+    // — both the price-scale gutter (zoom) and the plot area (free pan)
+    // need this so vertical movement always starts from the range that
+    // was actually on screen, not a stale one.
+    const range = manualPriceRange || (chartLayout ? {min:chartLayout.minP, max:chartLayout.maxP} : null);
+    dragStartPriceRange = range ? {min:range.min, max:range.max} : null;
+  }
+  canvas.style.cursor = dragMode==='price-scale' ? 'ns-resize' : dragMode==='time-scale' ? 'ew-resize' : 'grab';
+}
+
+function updateDrag(clientX, clientY){
+  if(!dragMode) return;
+
+  if(dragMode === 'plot'){
+    const dx = clientX - dragStartX;
+    const dy = clientY - dragStartY;
+    const candleW = chartLayout ? chartLayout.plotW/chartLayout.totalSlots : 8;
+
+    // Horizontal component: pan candles left/right (same as before).
+    const maxFutureOffset = -Math.round((chartLayout ? Math.max(20, Math.round(70/chartZoom)) : 40) * 0.6);
+    let next = Math.round(dragStartOffset - dx/candleW);
+    next = Math.max(maxFutureOffset, next);
+    chartPanOffset = next;
+
+    // Vertical component: free price pan — slides the candles up/down on
+    // screen WITHOUT changing the zoomed span, exactly like grabbing the
+    // chart itself and dragging it (as opposed to dragging the price axis,
+    // which zooms). This is what lets the view end up off-center or even
+    // showing a negative axis, matching the reference screenshots.
+    if(dragStartPriceRange){
+      const plotH = chartLayout ? chartLayout.plotH : 300;
+      const span = dragStartPriceRange.max - dragStartPriceRange.min;
+      const shift = (dy/plotH) * span;
+      manualPriceRange = {
+        min: dragStartPriceRange.min + shift,
+        max: dragStartPriceRange.max + shift,
+      };
+    }
+    drawChart();
+  }
+  else if(dragMode === 'price-scale'){
+    if(!dragStartPriceRange) return;
+    const dy = clientY - dragStartY;
+    const plotH = chartLayout ? chartLayout.plotH : 300;
+    const center = (dragStartPriceRange.max + dragStartPriceRange.min) / 2;
+    const halfSpan = (dragStartPriceRange.max - dragStartPriceRange.min) / 2;
+    // Drag DOWN = stretch the price scale (candles look taller/bigger,
+    // like image 2). Drag UP = compress it (candles look flatter, like
+    // image 1). This mirrors TradingView's price-axis drag behavior.
+    // A downward drag of one full plot height roughly doubles the zoom.
+    const factor = Math.pow(2, dy/plotH);
+    const newHalfSpan = Math.max(halfSpan / 50, Math.min(halfSpan*50, halfSpan / factor));
+    manualPriceRange = {
+      min: center - newHalfSpan,
+      max: center + newHalfSpan,
+    };
+    drawChart();
+  }
+  else if(dragMode === 'time-scale'){
+    const dx = clientX - dragStartX;
+    // dragging right on the time axis compresses time (zoom in), dragging
+    // left expands it (zoom out) — matches typical chart time-axis dragging
+    const factor = Math.exp(dx/160);
+    setZoom(dragStartZoom * factor);
+  }
+}
+
+function endDrag(){
+  dragMode = null;
+  canvas.style.cursor = 'default';
+}
+
+canvas.addEventListener('mousedown', (e)=>{ beginDrag(e.clientX, e.clientY); });
+window.addEventListener('mousemove', (e)=>{ if(dragMode) updateDrag(e.clientX, e.clientY); });
+window.addEventListener('mouseup', endDrag);
+
+// double-click the price scale to reset to auto-fit
+canvas.addEventListener('dblclick', (e)=>{
+  const region = regionAt(e.clientX, e.clientY);
+  if(region === 'price-scale'){
+    manualPriceRange = null;
+    drawChart();
+  }
+});
+
+// touch support
+let touchStartOffset=0, pinchStartDist=0, pinchStartZoom=1;
+canvas.addEventListener('touchstart', (e)=>{
+  if(e.touches.length===1){
+    beginDrag(e.touches[0].clientX, e.touches[0].clientY);
+    touchStartOffset = chartPanOffset;
+  } else if(e.touches.length===2){
+    dragMode = null;
+    pinchStartDist = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+    pinchStartZoom = chartZoom;
+  }
+}, {passive:true});
+canvas.addEventListener('touchmove', (e)=>{
+  if(e.touches.length===1 && dragMode){
+    updateDrag(e.touches[0].clientX, e.touches[0].clientY);
+  } else if(e.touches.length===2){
+    const dist = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+    setZoom(pinchStartZoom * (dist/pinchStartDist));
+  }
+}, {passive:true});
+canvas.addEventListener('touchend', endDrag);
+
+/* ============================================================
+   TOP BAR PRICE UPDATE
+============================================================ */
+function updateTopBar(){
+  const p = pair();
+  const price = livePrices[p.sym];
+  const chg = (price - p.price)/p.price*100;
+  document.getElementById('topPrice').textContent = fmtPrice(price,p);
+  document.getElementById('topPrice').className = 'pair-price num '+(chg>=0?'up':'down');
+  const chEl = document.getElementById('topChange');
+  chEl.textContent = (chg>=0?'+':'')+chg.toFixed(2)+'%';
+  chEl.className = 'pair-change num '+(chg>=0?'up':'down');
+  document.getElementById('topBalance').textContent = fmtUSD(state.balance);
+}
+
+/* ============================================================
+   MARGIN MODE / LEVERAGE DROPDOWNS
+============================================================ */
+document.getElementById('marginModeBtn').addEventListener('click', (e)=>{
+  e.stopPropagation();
+  openModal('marginMode');
+});
+document.getElementById('leverageBtn').addEventListener('click', (e)=>{
+  e.stopPropagation();
+  openModal('leverage');
+});
+
+/* ============================================================
+   ORDER TYPE TOGGLE
+============================================================ */
+document.getElementById('orderTypeRow').addEventListener('click', (e)=>{
+  const btn = e.target.closest('.otype-btn');
+  if(!btn) return;
+  document.querySelectorAll('.otype-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  state.orderType = btn.dataset.type;
+  document.getElementById('limitPriceWrap').style.display = state.orderType==='limit' ? 'block':'none';
+  updateOrderInfo();
+});
+
+/* ============================================================
+   SLIDER
+============================================================ */
+const sliderTrack = document.getElementById('sliderTrack');
+const sliderHandle = document.getElementById('sliderHandle');
+let sliderDragging = false;
+
+function updateSlider(){
+  document.getElementById('sliderFill').style.width = state.sliderPct+'%';
+  sliderHandle.style.left = state.sliderPct+'%';
+  document.getElementById('sliderPct').textContent = Math.round(state.sliderPct)+'% dari saldo tersedia';
+  const avail = state.balance;
+  const marginVal = (avail * state.sliderPct/100);
+  document.getElementById('marginInput').value = marginVal>0 ? marginVal.toFixed(2) : '';
+  updateOrderInfo();
+}
+function setSliderFromClientX(clientX){
+  const rect = sliderTrack.getBoundingClientRect();
+  let pct = (clientX - rect.left)/rect.width*100;
+  pct = Math.max(0, Math.min(100, pct));
+  state.sliderPct = pct;
+  updateSlider();
+}
+sliderHandle.addEventListener('mousedown', (e)=>{ sliderDragging=true; e.preventDefault(); });
+sliderTrack.addEventListener('mousedown', (e)=>{ sliderDragging=true; setSliderFromClientX(e.clientX); });
+window.addEventListener('mousemove', (e)=>{ if(sliderDragging) setSliderFromClientX(e.clientX); });
+window.addEventListener('mouseup', ()=>{ sliderDragging=false; });
+sliderHandle.addEventListener('touchstart', (e)=>{ sliderDragging=true; }, {passive:true});
+sliderTrack.addEventListener('touchstart', (e)=>{ sliderDragging=true; setSliderFromClientX(e.touches[0].clientX); }, {passive:true});
+window.addEventListener('touchmove', (e)=>{ if(sliderDragging && e.touches[0]) setSliderFromClientX(e.touches[0].clientX); }, {passive:true});
+window.addEventListener('touchend', ()=>{ sliderDragging=false; });
+
+document.getElementById('marginInput').addEventListener('input', (e)=>{
+  const v = parseFloat(e.target.value)||0;
+  const pct = state.balance>0 ? Math.min(100, v/state.balance*100) : 0;
+  state.sliderPct = pct;
+  document.getElementById('sliderFill').style.width = pct+'%';
+  sliderHandle.style.left = pct+'%';
+  document.getElementById('sliderPct').textContent = Math.round(pct)+'% dari saldo tersedia';
+  updateOrderInfo();
+});
+
+/* ============================================================
+   TP/SL TOGGLE
+============================================================ */
+document.getElementById('tpslToggle').addEventListener('click', ()=>{
+  state.tpslEnabled = !state.tpslEnabled;
+  document.getElementById('tpslCheckbox').classList.toggle('checked', state.tpslEnabled);
+  document.getElementById('tpslFields').classList.toggle('show', state.tpslEnabled);
+});
+document.getElementById('tpPriceInput').addEventListener('input', updateTpSlEstimates);
+document.getElementById('slPriceInput').addEventListener('input', updateTpSlEstimates);
+
+function updateTpSlEstimates(){
+  const p = pair();
+  const price = getEntryRefPrice();
+  const margin = parseFloat(document.getElementById('marginInput').value)||0;
+  const lev = state.leverage;
+  const qty = margin>0 ? (margin*lev)/price : 0;
+
+  const tpV = parseFloat(document.getElementById('tpPriceInput').value);
+  const slV = parseFloat(document.getElementById('slPriceInput').value);
+
+  const tpEst = document.getElementById('tpEstText');
+  const slEst = document.getElementById('slEstText');
+  if(tpV && qty>0){
+    const pnl = (tpV-price)*qty; // sign depends on side, show as long by default hint
+    tpEst.textContent = `Est. PnL long ≈ ${fmtUSD(pnl)} | short ≈ ${fmtUSD(-pnl)}`;
+  } else tpEst.textContent = '';
+  if(slV && qty>0){
+    const pnl = (slV-price)*qty;
+    slEst.textContent = `Est. PnL long ≈ ${fmtUSD(pnl)} | short ≈ ${fmtUSD(-pnl)}`;
+  } else slEst.textContent = '';
+}
+
+function getEntryRefPrice(){
+  const p = pair();
+  if(state.orderType==='limit'){
+    const lp = parseFloat(document.getElementById('limitPriceInput').value);
+    if(lp>0) return lp;
+  }
+  return livePrices[p.sym];
+}
+
+/* ============================================================
+   ORDER INFO CALC
+============================================================ */
+function updateOrderInfo(){
+  const p = pair();
+  const margin = parseFloat(document.getElementById('marginInput').value)||0;
+  const lev = state.leverage;
+  const price = getEntryRefPrice();
+  const notional = margin*lev;
+  const qty = price>0 ? notional/price : 0;
+
+  document.getElementById('infoSize').textContent = (qty>0? fmtQty(qty,p):'0.000')+' '+p.base;
+  document.getElementById('availMargin').textContent = 'Avail: '+fmtUSD(state.balance);
+
+  // fee estimate (taker for market, maker for limit)
+  const feeRate = state.orderType==='market' ? FEE_TAKER : FEE_MAKER;
+  const fee = notional*feeRate;
+  document.getElementById('infoFee').textContent = fee>0 ? fee.toFixed(4)+' USDT' : '0.00 USDT';
+
+  // liquidation estimate (simplified isolated formula)
+  if(margin>0 && qty>0){
+    const liqLong = price - (margin*(1-MMR))/qty;
+    document.getElementById('infoLiq').textContent = fmtPrice(Math.max(0,liqLong),p)+' (long)';
+  } else {
+    document.getElementById('infoLiq').textContent = '--';
+  }
+
+  const warning = document.getElementById('liqWarning');
+  const overBalance = margin > state.balance + 0.001;
+  warning.classList.toggle('show', overBalance && margin>0);
+
+  const canTrade = margin>0 && margin<=state.balance && qty>0;
+  document.getElementById('btnLong').disabled = !canTrade;
+  document.getElementById('btnShort').disabled = !canTrade;
+
+  updateTpSlEstimates();
+}
+document.getElementById('marginInput').addEventListener('input', updateOrderInfo);
+document.getElementById('limitPriceInput').addEventListener('input', updateOrderInfo);
+
+/* ============================================================
+   OPEN POSITION
+============================================================ */
+document.getElementById('btnLong').addEventListener('click', ()=> openPosition('long'));
+document.getElementById('btnShort').addEventListener('click', ()=> openPosition('short'));
+
+function openPosition(side){
+  const p = pair();
+  const margin = parseFloat(document.getElementById('marginInput').value)||0;
+  if(margin<=0){ toast('Margin belum diisi','Masukkan jumlah margin terlebih dahulu.','error'); return; }
+  if(margin > state.balance){ toast('Saldo tidak cukup','Margin melebihi saldo yang tersedia.','error'); return; }
+
+  const lev = state.leverage;
+  const entry = getEntryRefPrice();
+  const notional = margin*lev;
+  const qty = notional/entry;
+  const feeRate = state.orderType==='market' ? FEE_TAKER : FEE_MAKER;
+  const fee = notional*feeRate;
+
+  if(fee > state.balance - margin + margin){ /* fee taken from balance separately */ }
+
+  let tp = null, sl = null;
+  if(state.tpslEnabled){
+    const tpV = parseFloat(document.getElementById('tpPriceInput').value);
+    const slV = parseFloat(document.getElementById('slPriceInput').value);
+    if(tpV>0) tp = tpV;
+    if(slV>0) sl = slV;
+    // sanity check direction
+    if(side==='long'){
+      if(tp && tp<=entry){ toast('TP tidak valid','Untuk Long, TP harus di atas harga entry.','error'); return; }
+      if(sl && sl>=entry){ toast('SL tidak valid','Untuk Long, SL harus di bawah harga entry.','error'); return; }
+    } else {
+      if(tp && tp>=entry){ toast('TP tidak valid','Untuk Short, TP harus di bawah harga entry.','error'); return; }
+      if(sl && sl<=entry){ toast('SL tidak valid','Untuk Short, SL harus di atas harga entry.','error'); return; }
+    }
+  }
+
+  const liq = side==='long'
+    ? entry - (margin*(1-MMR))/qty
+    : entry + (margin*(1-MMR))/qty;
+
+  state.balance -= margin;
+  state.balance -= fee;
+
+  const pos = {
+    id: state.nextId++,
+    sym: p.sym,
+    base: p.base,
+    side, entry, qty, margin, leverage:lev,
+    mode: state.marginMode,
+    tp, sl,
+    liq: Math.max(0,liq),
+    openTime: Date.now(),
+    orderType: state.orderType,
+    feePaid: fee,
+  };
+  state.positions.push(pos);
+
+  toast('Posisi dibuka', `${side==='long'?'Long':'Short'} ${fmtQty(qty,p)} ${p.base} @ ${fmtPrice(entry,p)}`, 'success');
+
+  // reset form
+  document.getElementById('marginInput').value='';
+  state.sliderPct=0;
+  updateSlider();
+  document.getElementById('tpPriceInput').value='';
+  document.getElementById('slPriceInput').value='';
+  renderAll();
+}
+
+/* ============================================================
+   POSITION MONITORING (TP/SL/Liquidation auto-close)
+============================================================ */
+function checkPositionsAgainstPrice(){
+  const toClose = [];
+  state.positions.forEach(ps=>{
+    const price = livePrices[ps.sym];
+    if(ps.side==='long'){
+      if(price <= ps.liq){ toClose.push({ps, reason:'liq', price:ps.liq}); return; }
+      if(ps.sl && price <= ps.sl){ toClose.push({ps, reason:'sl', price:ps.sl}); return; }
+      if(ps.tp && price >= ps.tp){ toClose.push({ps, reason:'tp', price:ps.tp}); return; }
+    } else {
+      if(price >= ps.liq){ toClose.push({ps, reason:'liq', price:ps.liq}); return; }
+      if(ps.sl && price >= ps.sl){ toClose.push({ps, reason:'sl', price:ps.sl}); return; }
+      if(ps.tp && price <= ps.tp){ toClose.push({ps, reason:'tp', price:ps.tp}); return; }
+    }
+  });
+  toClose.forEach(item=> closePosition(item.ps.id, item.reason, item.price));
+}
+
+function positionPnl(ps, curPrice){
+  const diff = ps.side==='long' ? (curPrice-ps.entry) : (ps.entry-curPrice);
+  return diff*ps.qty;
+}
+function positionRoe(ps, curPrice){
+  const pnl = positionPnl(ps,curPrice);
+  return (pnl/ps.margin)*100;
+}
+
+function closePosition(id, reason, atPrice){
+  const idx = state.positions.findIndex(p=>p.id===id);
+  if(idx<0) return;
+  const ps = state.positions[idx];
+  const price = atPrice!=null ? atPrice : livePrices[ps.sym];
+  const pnl = positionPnl(ps, price);
+  const notional = ps.qty*price;
+  const closeFee = notional*FEE_TAKER;
+
+  let returned = ps.margin + pnl - closeFee;
+  if(reason==='liq') returned = 0; // liquidation wipes isolated margin
+
+  state.balance += Math.max(0, returned);
+
+  state.positions.splice(idx,1);
+  state.history.unshift({
+    ...ps, closePrice:price, closeTime:Date.now(), pnl, reason, closeFee,
+  });
+
+  const reasonLabel = reason==='tp'?'Take Profit tercapai':reason==='sl'?'Stop Loss tercapai':reason==='liq'?'Likuidasi':'Ditutup manual';
+  toast(reasonLabel, `${ps.side==='long'?'Long':'Short'} ${ps.sym} PnL: ${fmtUSD(pnl)}`, pnl>=0?'success':'error');
+
+  renderAll();
+}
+
+/* ============================================================
+   RENDER POSITIONS TABLE
+============================================================ */
+let activeTab = 'open';
+document.querySelectorAll('.positions-tab').forEach(t=>{
+  t.addEventListener('click', ()=>{
+    document.querySelectorAll('.positions-tab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    activeTab = t.dataset.tab;
+    renderPositions();
+  });
+});
+
+function riskClass(riskPct){
+  if(riskPct >= 70) return 'risk-high';
+  if(riskPct >= 35) return 'risk-mid';
+  return 'risk-low';
+}
+
+// risk% = how close mark price is toward liquidation, relative to entry->liq distance
+function positionRisk(ps, mark){
+  const dist = Math.abs(ps.entry - ps.liq);
+  if(dist<=0) return 0;
+  let progressed;
+  if(ps.side==='long') progressed = ps.entry - mark;
+  else progressed = mark - ps.entry;
+  const pct = (progressed/dist)*100;
+  return Math.max(0, Math.min(100, pct));
+}
+
+function renderPositions(){
+  const body = document.getElementById('positionsBody');
+  document.getElementById('openCount').textContent = state.positions.length;
+
+  const hasProfit = state.positions.some(ps=> positionPnl(ps, livePrices[ps.sym]) > 0);
+  const hasLoss = state.positions.some(ps=> positionPnl(ps, livePrices[ps.sym]) < 0);
+  document.getElementById('closeProfitBtn').disabled = !hasProfit;
+  document.getElementById('closeLossBtn').disabled = !hasLoss;
+  document.getElementById('closeAllBtn').disabled = state.positions.length===0;
+  document.getElementById('bulkActions').style.display = activeTab==='open' ? 'flex':'none';
+
+  if(activeTab==='open'){
+    if(state.positions.length===0){
+      body.innerHTML = '<div class="pos-empty">Belum ada posisi terbuka. Buka posisi lewat panel di samping.</div>';
+      return;
+    }
+    let html = '<div class="pos-cards">';
+    state.positions.forEach(ps=>{
+      const p = PAIRS.find(x=>x.sym===ps.sym);
+      const mark = livePrices[ps.sym];
+      const pnl = positionPnl(ps, mark);
+      const roe = positionRoe(ps, mark);
+      const pnlCls = pnl>=0?'up':'down';
+      const notional = ps.qty*mark;
+      const risk = positionRisk(ps, mark);
+      const rCls = riskClass(risk);
+      const hasTpSl = ps.tp || ps.sl;
+
+      html += `<div class="pos-card">
+        <div class="pos-card-head">
+          <div class="pos-card-badge">${ps.base.charAt(0)}</div>
+          <div>
+            <div class="pos-card-sym">${ps.sym} Perpetual</div>
+            <div class="pos-card-meta">
+              <span class="side-txt ${ps.side}">${ps.side==='long'?'Long':'Short'}</span>
+              <span>${ps.mode==='isolated'?'Isolated':'Cross'} ${ps.leverage}x</span>
+            </div>
+          </div>
+          <button class="pos-card-close-x" data-action="quickclose" data-id="${ps.id}" title="Tutup posisi">✕</button>
+        </div>
+
+        <div class="pos-card-pnl-row">
+          <div class="pos-card-pnl-block">
+            <div class="lbl">Unrealized PNL (USDT)</div>
+            <div class="val num ${pnlCls}">${pnl>=0?'':'-'}${Math.abs(pnl).toFixed(2)}</div>
+          </div>
+          <div class="pos-card-roe-block">
+            <div class="lbl">ROE</div>
+            <div class="val num ${pnlCls}">${roe>=0?'+':''}${roe.toFixed(2)}%</div>
+          </div>
+        </div>
+
+        <div class="pos-card-grid">
+          <div class="pos-card-cell"><div class="lbl">Size (USDT)</div><div class="val">${notional.toFixed(3)}</div></div>
+          <div class="pos-card-cell"><div class="lbl">Margin (USDT)</div><div class="val">${ps.margin.toFixed(2)}</div></div>
+          <div class="pos-card-cell" style="text-align:right;"><div class="lbl">Risk</div><div class="val ${rCls}">${risk.toFixed(2)}%</div></div>
+          <div class="pos-card-cell"><div class="lbl">Entry Price</div><div class="val">${fmtPrice(ps.entry,p)}</div></div>
+          <div class="pos-card-cell"><div class="lbl">Mark Price</div><div class="val">${fmtPrice(mark,p)}</div></div>
+          <div class="pos-card-cell" style="text-align:right;"><div class="lbl">Liq. Price</div><div class="val">${fmtPrice(ps.liq,p)}</div></div>
+        </div>
+
+        <div class="pos-card-actions">
+          <button class="pos-card-btn" data-action="leverage" data-id="${ps.id}">Adjust Leverage</button>
+          <button class="pos-card-btn ${hasTpSl?'tpsl-active':''}" data-action="tpsl" data-id="${ps.id}">Stop Profit &amp; Loss</button>
+          <button class="pos-card-btn danger" data-action="close" data-id="${ps.id}">Close Position</button>
+        </div>
+      </div>`;
+    });
+    html += '</div>';
+    body.innerHTML = html;
+
+    body.querySelectorAll('[data-action="close"], [data-action="quickclose"]').forEach(btn=>{
+      btn.addEventListener('click', ()=> confirmClose(parseInt(btn.dataset.id)));
+    });
+    body.querySelectorAll('[data-action="tpsl"]').forEach(btn=>{
+      btn.addEventListener('click', ()=> openModal('editTpSl', parseInt(btn.dataset.id)));
+    });
+    body.querySelectorAll('[data-action="leverage"]').forEach(btn=>{
+      btn.addEventListener('click', ()=> openModal('adjustPositionLeverage', parseInt(btn.dataset.id)));
+    });
+  } else {
+    if(state.history.length===0){
+      body.innerHTML = '<div class="pos-empty">Belum ada riwayat transaksi.</div>';
+      return;
+    }
+    let html = `<table class="pos-table"><thead><tr>
+      <th>Pair</th><th>Sisi</th><th>Ukuran</th><th>Entry</th><th>Close</th>
+      <th>PnL</th><th>Alasan</th><th>Waktu</th>
+    </tr></thead><tbody>`;
+    state.history.slice(0,50).forEach(ps=>{
+      const p = PAIRS.find(x=>x.sym===ps.sym);
+      const pnlCls = ps.pnl>=0?'up':'down';
+      const reasonLabel = ps.reason==='tp'?'Take Profit':ps.reason==='sl'?'Stop Loss':ps.reason==='liq'?'Likuidasi':'Manual';
+      const d = new Date(ps.closeTime);
+      html += `<tr>
+        <td><b>${ps.sym}</b></td>
+        <td><span class="pos-side-badge ${ps.side}">${ps.side==='long'?'LONG':'SHORT'}</span></td>
+        <td class="num">${fmtQty(ps.qty,p)} ${ps.base}</td>
+        <td class="num">${fmtPrice(ps.entry,p)}</td>
+        <td class="num">${fmtPrice(ps.closePrice,p)}</td>
+        <td class="num ${pnlCls}">${fmtUSD(ps.pnl)}</td>
+        <td style="font-size:11px; color:var(--sub);">${reasonLabel}</td>
+        <td style="font-size:10.5px; color:var(--sub2);">${d.toLocaleTimeString('id-ID')}</td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+    body.innerHTML = html;
+  }
+}
+
+function confirmClose(id){
+  const ps = state.positions.find(p=>p.id===id);
+  if(!ps) return;
+  openModal('confirmClose', id);
+}
+
+/* ============================================================
+   BULK CLOSE ACTIONS
+============================================================ */
+document.getElementById('closeProfitBtn').addEventListener('click', ()=> openModal('bulkClose','profit'));
+document.getElementById('closeLossBtn').addEventListener('click', ()=> openModal('bulkClose','loss'));
+document.getElementById('closeAllBtn').addEventListener('click', ()=> openModal('bulkClose','all'));
+
+function bulkCloseIds(kind){
+  return state.positions.filter(ps=>{
+    const pnl = positionPnl(ps, livePrices[ps.sym]);
+    if(kind==='profit') return pnl>0;
+    if(kind==='loss') return pnl<0;
+    return true;
+  }).map(ps=>ps.id);
+}
+
+/* ============================================================
+   STATS BAR
+============================================================ */
+function updateStats(){
+  let uPnl = 0, marginUsed = 0;
+  state.positions.forEach(ps=>{
+    uPnl += positionPnl(ps, livePrices[ps.sym]);
+    marginUsed += ps.margin;
+  });
+  const equity = state.balance + marginUsed + uPnl;
+  document.getElementById('statBalance').textContent = fmtUSD(state.balance);
+  const uEl = document.getElementById('statUpnl');
+  uEl.textContent = fmtUSD(uPnl);
+  uEl.className = 'val num '+(uPnl>=0?'up':'down');
+  document.getElementById('statMargin').textContent = fmtUSD(marginUsed);
+  document.getElementById('statEquity').textContent = fmtUSD(equity);
+}
+
+/* ============================================================
+   MODALS
+============================================================ */
+const overlay = document.getElementById('modalOverlay');
+const modalBox = document.getElementById('modalBox');
+
+function closeModal(){ overlay.classList.remove('show'); modalBox.innerHTML=''; }
+overlay.addEventListener('click', (e)=>{ if(e.target===overlay) closeModal(); });
+
+function openModal(type, payload){
+  if(type==='marginMode'){
+    modalBox.innerHTML = `
+      <div class="modal-title">Mode Margin <span class="modal-close" id="mClose">✕</span></div>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <div class="modal-opt" data-val="isolated" style="padding:12px; border:1px solid var(--line); border-radius:8px; cursor:pointer;">
+          <b>Isolated</b><div style="color:var(--sub); font-size:11px; margin-top:3px;">Margin dibatasi sesuai jumlah yang dialokasikan ke posisi. Risiko lebih terkontrol.</div>
+        </div>
+        <div class="modal-opt" data-val="cross" style="padding:12px; border:1px solid var(--line); border-radius:8px; cursor:pointer;">
+          <b>Cross</b><div style="color:var(--sub); font-size:11px; margin-top:3px;">Seluruh saldo tersedia dipakai sebagai margin bersama untuk menahan likuidasi.</div>
+        </div>
+      </div>`;
+    modalBox.querySelectorAll('.modal-opt').forEach(el=>{
+      if(el.dataset.val===state.marginMode) el.style.borderColor='var(--accent)';
+      el.addEventListener('click', ()=>{
+        state.marginMode = el.dataset.val;
+        document.getElementById('marginModeLabel').textContent = state.marginMode==='isolated'?'Isolated':'Cross';
+        closeModal();
+      });
+    });
+  }
+
+  else if(type==='leverage'){
+    const maxLev = pair().maxLev;
+    const presets = [1,2,3,5,10,20,25,50,75,100,125].filter(x=>x<=maxLev);
+    modalBox.innerHTML = `
+      <div class="modal-title">Atur Leverage <span class="modal-close" id="mClose">✕</span></div>
+      <div style="text-align:center; font-size:28px; font-weight:800; font-family:var(--mono); margin-bottom:14px;" id="levPreview">${state.leverage}x</div>
+      <div class="slider-wrap">
+        <div class="slider-track" id="levTrack">
+          <div class="slider-fill" id="levFill" style="width:${(state.leverage/maxLev*100)}%"></div>
+          <div class="slider-handle" id="levHandle" style="left:${(state.leverage/maxLev*100)}%"></div>
+        </div>
+        <div class="slider-labels"><span>1x</span><span>${maxLev}x</span></div>
+      </div>
+      <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:14px;">
+        ${presets.map(l=>`<button class="btn-mini" data-lev="${l}" style="flex:1; min-width:52px;">${l}x</button>`).join('')}
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn confirm" id="levConfirm">Konfirmasi</button>
+      </div>`;
+    let tempLev = state.leverage;
+    function setLev(l){
+      tempLev = Math.max(1, Math.min(maxLev, l));
+      document.getElementById('levPreview').textContent = tempLev+'x';
+      const pct = (tempLev/maxLev*100);
+      document.getElementById('levFill').style.width = pct+'%';
+      document.getElementById('levHandle').style.left = pct+'%';
+    }
+    modalBox.querySelectorAll('[data-lev]').forEach(b=> b.addEventListener('click', ()=> setLev(parseInt(b.dataset.lev))));
+    const track = document.getElementById('levTrack');
+    let dragging=false;
+    function fromX(clientX){
+      const rect = track.getBoundingClientRect();
+      let pct = (clientX-rect.left)/rect.width;
+      pct = Math.max(0,Math.min(1,pct));
+      setLev(Math.round(pct*maxLev));
+    }
+    track.addEventListener('mousedown', (e)=>{ dragging=true; fromX(e.clientX); });
+    window.addEventListener('mousemove', (e)=>{ if(dragging) fromX(e.clientX); });
+    window.addEventListener('mouseup', ()=>{ dragging=false; });
+    track.addEventListener('touchstart', (e)=>{ dragging=true; fromX(e.touches[0].clientX); }, {passive:true});
+    window.addEventListener('touchmove', (e)=>{ if(dragging && e.touches[0]) fromX(e.touches[0].clientX); }, {passive:true});
+    window.addEventListener('touchend', ()=>{ dragging=false; });
+
+    document.getElementById('levConfirm').addEventListener('click', ()=>{
+      state.leverage = tempLev;
+      document.getElementById('leverageLabel').textContent = tempLev+'x';
+      updateOrderInfo();
+      closeModal();
+    });
+  }
+
+  else if(type==='confirmClose'){
+    const ps = state.positions.find(p=>p.id===payload);
+    if(!ps){ closeModal(); return; }
+    const p = PAIRS.find(x=>x.sym===ps.sym);
+    const mark = livePrices[ps.sym];
+    const pnl = positionPnl(ps, mark);
+    modalBox.innerHTML = `
+      <div class="modal-title">Tutup Posisi <span class="modal-close" id="mClose">✕</span></div>
+      <div style="font-size:12.5px; color:var(--sub); line-height:1.7;">
+        ${ps.side==='long'?'Long':'Short'} <b style="color:var(--text)">${ps.sym}</b> · ${fmtQty(ps.qty,p)} ${ps.base}<br>
+        Entry: <span class="num">${fmtPrice(ps.entry,p)}</span> → Mark: <span class="num">${fmtPrice(mark,p)}</span><br>
+        Estimasi PnL: <span class="num ${pnl>=0?'up':'down'}" style="font-weight:700;">${fmtUSD(pnl)}</span>
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn cancel" id="mCancel">Batal</button>
+        <button class="modal-btn danger" id="mConfirm">Tutup Posisi</button>
+      </div>`;
+    document.getElementById('mCancel').addEventListener('click', closeModal);
+    document.getElementById('mConfirm').addEventListener('click', ()=>{ closePosition(payload,'manual'); closeModal(); });
+  }
+
+  else if(type==='editTpSl'){
+    const ps = state.positions.find(p=>p.id===payload);
+    if(!ps){ closeModal(); return; }
+    const p = PAIRS.find(x=>x.sym===ps.sym);
+    modalBox.innerHTML = `
+      <div class="modal-title">Atur TP / SL <span class="modal-close" id="mClose">✕</span></div>
+      <div style="font-size:11.5px; color:var(--sub); margin-bottom:12px;">${ps.side==='long'?'Long':'Short'} ${ps.sym} · Entry ${fmtPrice(ps.entry,p)}</div>
+      <div class="modal-field">
+        <label>Take Profit (USDT)</label>
+        <div class="input-box"><input type="text" id="editTp" inputmode="decimal" value="${ps.tp||''}" placeholder="Kosongkan jika tidak dipakai"></div>
+      </div>
+      <div class="modal-field">
+        <label>Stop Loss (USDT)</label>
+        <div class="input-box"><input type="text" id="editSl" inputmode="decimal" value="${ps.sl||''}" placeholder="Kosongkan jika tidak dipakai"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn cancel" id="mCancel">Batal</button>
+        <button class="modal-btn confirm" id="mSave">Simpan</button>
+      </div>`;
+    document.getElementById('mCancel').addEventListener('click', closeModal);
+    document.getElementById('mSave').addEventListener('click', ()=>{
+      const tpV = parseFloat(document.getElementById('editTp').value);
+      const slV = parseFloat(document.getElementById('editSl').value);
+      const newTp = tpV>0?tpV:null;
+      const newSl = slV>0?slV:null;
+      if(ps.side==='long'){
+        if(newTp && newTp<=ps.entry){ toast('TP tidak valid','Untuk Long, TP harus di atas entry.','error'); return; }
+        if(newSl && newSl>=ps.entry){ toast('SL tidak valid','Untuk Long, SL harus di bawah entry.','error'); return; }
+      } else {
+        if(newTp && newTp>=ps.entry){ toast('TP tidak valid','Untuk Short, TP harus di bawah entry.','error'); return; }
+        if(newSl && newSl<=ps.entry){ toast('SL tidak valid','Untuk Short, SL harus di atas entry.','error'); return; }
+      }
+      ps.tp = newTp; ps.sl = newSl;
+      toast('TP/SL diperbarui', ps.sym+' berhasil diperbarui.', 'success');
+      closeModal();
+      renderAll();
+    });
+  }
+
+  else if(type==='bulkClose'){
+    const kind = payload;
+    const ids = bulkCloseIds(kind);
+    const label = kind==='profit'?'yang Profit':kind==='loss'?'yang Loss':'Semua';
+    let totalPnl = 0;
+    ids.forEach(id=>{
+      const ps = state.positions.find(p=>p.id===id);
+      if(ps) totalPnl += positionPnl(ps, livePrices[ps.sym]);
+    });
+    if(ids.length===0){ closeModal(); return; }
+    modalBox.innerHTML = `
+      <div class="modal-title">Tutup Posisi ${label} <span class="modal-close" id="mClose">✕</span></div>
+      <div style="font-size:12.5px; color:var(--sub); line-height:1.7;">
+        Ini akan menutup <b style="color:var(--text)">${ids.length}</b> posisi ${label.toLowerCase()}.<br>
+        Estimasi total PnL: <span class="num ${totalPnl>=0?'up':'down'}" style="font-weight:700;">${fmtUSD(totalPnl)}</span>
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn cancel" id="mCancel">Batal</button>
+        <button class="modal-btn danger" id="mConfirm">Tutup ${ids.length} Posisi</button>
+      </div>`;
+    document.getElementById('mCancel').addEventListener('click', closeModal);
+    document.getElementById('mConfirm').addEventListener('click', ()=>{
+      [...ids].forEach(id=> closePosition(id,'manual'));
+      closeModal();
+    });
+  }
+
+  else if(type==='adjustPositionLeverage'){
+    const ps = state.positions.find(p=>p.id===payload);
+    if(!ps){ closeModal(); return; }
+    const p = PAIRS.find(x=>x.sym===ps.sym);
+    const maxLev = p.maxLev;
+    modalBox.innerHTML = `
+      <div class="modal-title">Adjust Leverage <span class="modal-close" id="mClose">✕</span></div>
+      <div style="font-size:11.5px; color:var(--sub); margin-bottom:12px;">${ps.sym} · Posisi ${ps.side==='long'?'Long':'Short'} yang sedang berjalan</div>
+      <div style="text-align:center; font-size:28px; font-weight:800; font-family:var(--mono); margin-bottom:14px;" id="posLevPreview">${ps.leverage}x</div>
+      <div class="slider-wrap">
+        <div class="slider-track" id="posLevTrack">
+          <div class="slider-fill" id="posLevFill" style="width:${(ps.leverage/maxLev*100)}%"></div>
+          <div class="slider-handle" id="posLevHandle" style="left:${(ps.leverage/maxLev*100)}%"></div>
+        </div>
+        <div class="slider-labels"><span>1x</span><span>${maxLev}x</span></div>
+      </div>
+      <div style="font-size:10.5px; color:var(--sub2); margin-top:10px; line-height:1.6;">
+        Mengubah leverage akan menghitung ulang margin dan harga likuidasi posisi ini, tanpa mengubah ukuran posisi.
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn cancel" id="mCancel">Batal</button>
+        <button class="modal-btn confirm" id="mSave">Simpan</button>
+      </div>`;
+    let tempLev = ps.leverage;
+    function setLev(l){
+      tempLev = Math.max(1, Math.min(maxLev, l));
+      document.getElementById('posLevPreview').textContent = tempLev+'x';
+      const pct = (tempLev/maxLev*100);
+      document.getElementById('posLevFill').style.width = pct+'%';
+      document.getElementById('posLevHandle').style.left = pct+'%';
+    }
+    const track = document.getElementById('posLevTrack');
+    let dragging=false;
+    function fromX(clientX){
+      const rect = track.getBoundingClientRect();
+      let pct = (clientX-rect.left)/rect.width;
+      pct = Math.max(0,Math.min(1,pct));
+      setLev(Math.round(pct*maxLev));
+    }
+    track.addEventListener('mousedown', (e)=>{ dragging=true; fromX(e.clientX); });
+    window.addEventListener('mousemove', (e)=>{ if(dragging) fromX(e.clientX); });
+    window.addEventListener('mouseup', ()=>{ dragging=false; });
+    track.addEventListener('touchstart', (e)=>{ dragging=true; fromX(e.touches[0].clientX); }, {passive:true});
+    window.addEventListener('touchmove', (e)=>{ if(dragging && e.touches[0]) fromX(e.touches[0].clientX); }, {passive:true});
+    window.addEventListener('touchend', ()=>{ dragging=false; });
+
+    document.getElementById('mCancel').addEventListener('click', closeModal);
+    document.getElementById('mSave').addEventListener('click', ()=>{
+      // recompute margin & liq at new leverage, keeping notional/qty fixed
+      const notional = ps.qty * ps.entry;
+      const newMargin = notional/tempLev;
+      const marginDelta = newMargin - ps.margin;
+      if(marginDelta > state.balance){
+        toast('Saldo tidak cukup','Menurunkan leverage butuh margin tambahan yang melebihi saldo.','error');
+        return;
+      }
+      state.balance -= marginDelta;
+      ps.margin = newMargin;
+      ps.leverage = tempLev;
+      ps.liq = ps.side==='long'
+        ? ps.entry - (ps.margin*(1-MMR))/ps.qty
+        : ps.entry + (ps.margin*(1-MMR))/ps.qty;
+      ps.liq = Math.max(0, ps.liq);
+      toast('Leverage diperbarui', ps.sym+' sekarang '+tempLev+'x', 'success');
+      closeModal();
+      renderAll();
+    });
+  }
+
+  else if(type==='setBalance'){
+    modalBox.innerHTML = `
+      <div class="modal-title">Atur Saldo <span class="modal-close" id="mClose">✕</span></div>
+      <div style="font-size:11.5px; color:var(--sub); margin-bottom:12px;">Mengatur ulang saldo akan menutup semua posisi terbuka tanpa memengaruhi riwayat.</div>
+      <div class="modal-field">
+        <label>Saldo Baru (USDT)</label>
+        <div class="input-box"><input type="text" id="newBalance" inputmode="decimal" value="${state.balance.toFixed(2)}"></div>
+      </div>
+      <div style="display:flex; gap:6px; margin-bottom:4px;">
+        ${[1000,5000,10000,50000].map(v=>`<button class="btn-mini" data-b="${v}" style="flex:1;">$${v.toLocaleString()}</button>`).join('')}
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn cancel" id="mCancel">Batal</button>
+        <button class="modal-btn confirm" id="mSave">Terapkan</button>
+      </div>`;
+    modalBox.querySelectorAll('[data-b]').forEach(b=>{
+      b.addEventListener('click', ()=>{ document.getElementById('newBalance').value = b.dataset.b; });
+    });
+    document.getElementById('mCancel').addEventListener('click', closeModal);
+    document.getElementById('mSave').addEventListener('click', ()=>{
+      const v = parseFloat(document.getElementById('newBalance').value);
+      if(!(v>0)){ toast('Nilai tidak valid','Masukkan jumlah saldo yang valid.','error'); return; }
+      state.balance = v;
+      state.positions = [];
+      toast('Saldo diperbarui', 'Saldo baru: '+fmtUSD(v), 'success');
+      closeModal();
+      renderAll();
+    });
+  }
+
+  overlay.classList.add('show');
+  const cl = document.getElementById('mClose');
+  if(cl) cl.addEventListener('click', closeModal);
+}
+
+document.getElementById('resetBtn').addEventListener('click', ()=> openModal('setBalance'));
+
+/* ============================================================
+   MAIN RENDER LOOP
+============================================================ */
+function renderAll(){
+  updateTopBar();
+  drawChart();
+  renderPositions();
+  updateStats();
+  updateOrderInfo();
+}
+
+/* ============================================================
+   INIT
+============================================================ */
+function init(){
+  renderTfBar();
+  updateSlider();
+  resizeCanvas();
+
+  document.getElementById('pairSymDisplay').textContent = pair().sym;
+  document.getElementById('leverageLabel').textContent = state.leverage+'x';
+  updateDataSourceBadge();
+  showChartLoading();
+
+  connectToBinance();
+}
+init();
+
+})();
+</script>
+</body>
+</html>
